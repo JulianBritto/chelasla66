@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
+use App\Models\SoldProduct;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -56,6 +57,16 @@ class InvoiceController extends Controller
             $product = Product::find($item['product_id']);
             $product->stock -= $item['quantity'];
             $product->save();
+
+            // Registrar en sold_products (una fila por producto vendido)
+            SoldProduct::create([
+                'invoice_id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'price_total' => $item['price'] * $item['quantity'],
+                'invoice_date' => $invoice->invoice_date,
+            ]);
         }
 
         return response()->json($invoice, 201);
@@ -74,6 +85,9 @@ class InvoiceController extends Controller
             $product->stock += $item->quantity;
             $product->save();
         }
+
+        // Eliminar registros en sold_products relacionados
+        SoldProduct::where('invoice_id', $invoice->id)->orWhere('invoice_number', $invoice->invoice_number)->delete();
 
         $invoice->delete();
         return response()->json(['message' => 'Invoice deleted successfully']);

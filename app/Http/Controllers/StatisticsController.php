@@ -3,12 +3,43 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
 
 class StatisticsController extends Controller
 {
+    public function getUnifiedStatistics(): JsonResponse
+    {
+        $last30Days = [];
+
+        for ($i = 29; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $last30Days[$date->format('Y-m-d')] = [
+                'date' => $date->format('d/m'),
+                'products_sold' => 0,
+                'invoices_count' => 0,
+                'total_revenue' => 0,
+            ];
+        }
+
+        $invoices = Invoice::where('invoice_date', '>=', Carbon::now()->subDays(30))
+            ->with('items')
+            ->get();
+
+        foreach ($invoices as $invoice) {
+            $dateKey = $invoice->invoice_date->format('Y-m-d');
+            if (!isset($last30Days[$dateKey])) {
+                continue;
+            }
+
+            $last30Days[$dateKey]['products_sold'] += (int) $invoice->items->sum('quantity');
+            $last30Days[$dateKey]['invoices_count'] += 1;
+            $last30Days[$dateKey]['total_revenue'] += (float) $invoice->total;
+        }
+
+        return response()->json(array_values($last30Days));
+    }
+
     public function getDailySalesData(): JsonResponse
     {
         $last30Days = [];

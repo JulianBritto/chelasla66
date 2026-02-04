@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\ProductCost;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -10,7 +11,7 @@ class ProductController extends Controller
 {
     public function getAll(): JsonResponse
     {
-        $products = Product::all();
+        $products = Product::with('cost')->get();
         return response()->json($products);
     }
 
@@ -44,5 +45,21 @@ class ProductController extends Controller
     {
         $product->delete();
         return response()->json(['message' => 'Product deleted successfully']);
+    }
+
+    public function updateCost(Request $request, Product $product): JsonResponse
+    {
+        $validated = $request->validate([
+            'purchase_price' => 'required|numeric|min:0',
+            'profit' => 'required|numeric|min:0',
+        ]);
+
+        $cost = $product->cost ?: new ProductCost();
+        $cost->product_id = $product->id;
+        $cost->purchase_price = $validated['purchase_price'];
+        $cost->profit = $validated['profit'];
+        $cost->save();
+
+        return response()->json($cost);
     }
 }

@@ -683,6 +683,12 @@
             gap: 5px;
         }
 
+        .low-stock-pagination-container {
+            margin-top: 35px;
+            display: flex;
+            justify-content: center;
+        }
+
         .pagination-btn {
             padding: 8px 12px;
             border: 1px solid #ddd;
@@ -732,14 +738,74 @@
 
         <!-- Navigation Tabs -->
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('dashboard')">🏠 Principal</button>
-            <button class="nav-tab" onclick="switchTab('inventory')">📊 Inventario</button>
-            <button class="nav-tab" onclick="switchTab('statistics')">📈 Estadísticas</button>
-            <button class="nav-tab" onclick="switchTab('invoices')">🧾 Facturas</button>
+            <button class="nav-tab active" onclick="switchTab('dashboard', this)">🏠 Principal</button>
+            <button class="nav-tab" onclick="switchTab('inventory', this)">📊 Inventario</button>
+            <button class="nav-tab" onclick="switchTab('profits', this)">💰 Ganancias</button>
+            <button class="nav-tab" onclick="switchTab('invoices', this)">🧾 Facturas</button>
+            <button class="nav-tab" onclick="switchTab('daily-close', this)">🔒 Cierre del Día</button>
         </div>
 
         <!-- Content -->
         <div class="content">
+                        <!-- Daily Close Section -->
+                        <div id="daily-close" class="section">
+                            <div class="section-header">
+                                <h2>🔒 Cierre del Día</h2>
+                            </div>
+                            <div class="search-bar" style="margin-bottom: 30px;">
+                                <input type="date" id="closeDateFilter" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;" onchange="loadDailyCloseDashboard()">
+                            </div>
+                            <!-- Dashboard Totals -->
+                            <div class="charts-container" style="display: flex; gap: 20px; justify-content: center; align-items: stretch; flex-wrap: nowrap; margin-bottom: 30px;">
+                                <div class="stat-summary-card">
+                                    <div class="summary-header">
+                                        <h3>📊 Total de Transacciones</h3>
+                                    </div>
+                                    <div class="summary-content">
+                                        <div class="summary-value" id="dailyTransactionCount" style="font-size: 36px; text-align: center;">0</div>
+                                    </div>
+                                </div>
+                                <div class="stat-summary-card">
+                                    <div class="summary-header">
+                                        <h3>🧾 Total de Facturas</h3>
+                                    </div>
+                                    <div class="summary-content">
+                                        <div class="summary-value" id="dailyInvoiceCount" style="font-size: 36px; text-align: center;">0</div>
+                                    </div>
+                                </div>
+                                <div class="stat-summary-card">
+                                    <div class="summary-header">
+                                        <h3>💰 Total de Ventas</h3>
+                                    </div>
+                                    <div class="summary-content">
+                                        <div class="summary-value" id="dailyTotalSales" style="font-size: 36px; text-align: center; color: #667eea;">$0</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Products Summary Table -->
+                            <div style="margin-top: 30px;">
+                                <h3 style="margin-bottom: 20px;">📦 Resumen de Productos Vendidos</h3>
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cantidad Vendida</th>
+                                                <th>Precio Total</th>
+                                                <th>Hora</th>
+                                                <th>Nº Factura</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dailyProductsTable">
+                                            <tr>
+                                                <td colspan="5" class="text-center">Selecciona una fecha para ver los datos</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="pagination-container" id="dailyProductsPagination"></div>
+                            </div>
+                        </div>
             <!-- Dashboard Section -->
             <div id="dashboard" class="section active">
                 <div class="section-header">
@@ -781,7 +847,9 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div id="lowStockPagination" class="pagination"></div>
+                        <div class="low-stock-pagination-container">
+                            <div id="lowStockPagination" class="pagination"></div>
+                        </div>
                     </div>
 
                     <!-- Últimas Facturas -->
@@ -882,103 +950,41 @@
                 </div>
             </div>
 
-            <!-- Statistics Section -->
-            <div id="statistics" class="section">
+            <!-- Profits Section -->
+            <div id="profits" class="section">
                 <div class="section-header">
-                    <h2>📈 Estadísticas de Ventas</h2>
+                    <h2>💰 Gestión de Ganancias</h2>
                 </div>
 
-                <!-- Summary Cards -->
-                <div class="charts-container">
-                    <div class="stat-summary-card">
-                        <div class="summary-header">
-                            <h3>📦 Resumen de Ventas</h3>
-                        </div>
-                        <div class="summary-content">
-                            <div class="summary-row">
-                                <span class="summary-label">Total Productos Vendidos (30 días):</span>
-                                <span class="summary-value" id="totalProductsSold">0</span>
-                            </div>
-                            <div class="summary-row">
-                                <span class="summary-label">Promedio Diario:</span>
-                                <span class="summary-value" id="avgDailySales">0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stat-summary-card">
-                        <div class="summary-header">
-                            <h3>💰 Resumen de Ingresos</h3>
-                        </div>
-                        <div class="summary-content">
-                            <div class="summary-row">
-                                <span class="summary-label">Total Dinero Vendido (30 días):</span>
-                                <span class="summary-value" id="totalRevenueAmount">$0</span>
-                            </div>
-                            <div class="summary-row">
-                                <span class="summary-label">Promedio Diario:</span>
-                                <span class="summary-value" id="avgDailyRevenue">$0</span>
-                            </div>
-                        </div>
-                    </div>
+                <div class="search-bar">
+                    <input type="text" id="profitSearch" placeholder="Buscar por nombre de producto" onkeyup="filterProfits()">
                 </div>
 
-                <h3 style="margin-top: 30px; margin-bottom: 20px;">Detalles por Rango de Fecha</h3>
-
-                <!-- Tables Container -->
-                <div class="tables-container">
-                    <div class="data-table-card">
-                        <h3>📦 Total de Transacciones por Día</h3>
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Total de Transacciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactionsTable">
-                                <tr>
-                                    <td colspan="2" style="text-align: center;">Cargando...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div class="pagination-container" id="transactionsPagination"></div>
-                    </div>
-
-                    <div class="data-table-card">
-                        <h3>💰 Total de Ventas por Día</h3>
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Total Vendido (COP)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="revenueTable">
-                                <tr>
-                                    <td colspan="2" style="text-align: center;">Cargando...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div class="pagination-container" id="revenuePagination"></div>
-                    </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Precio Venta</th>
+                                <th>Costo Compra</th>
+                                <th>Ganancia</th>
+                                <th>Margen %</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="profitsTable">
+                            <tr>
+                                <td colspan="6" style="text-align: center;">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <!-- Date Range Filter -->
-                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; display: flex; gap: 15px; align-items: flex-end;">
-                    <div style="flex: 1;">
-                        <label for="dateStart" style="display: block; margin-bottom: 8px; font-weight: 500;">Fecha Inicio:</label>
-                        <input type="date" id="dateStart" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                    </div>
-                    <div style="flex: 1;">
-                        <label for="dateEnd" style="display: block; margin-bottom: 8px; font-weight: 500;">Fecha Fin:</label>
-                        <input type="date" id="dateEnd" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                    </div>
-                    <button class="btn btn-primary" onclick="filterStatisticsByDateRange()" style="padding: 8px 20px;">Filtrar</button>
-                </div>
+                <div class="pagination-container" id="profitsPagination"></div>
             </div>
+
         </div>
-    </div>
+
+            <!-- ...existing code... -->
 
     <!-- Add/Edit Product Modal -->
     <div id="productModal" class="modal">
@@ -1009,6 +1015,41 @@
                 <div style="display: flex; gap: 10px;">
                     <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar Producto</button>
                     <button type="button" class="btn btn-secondary" onclick="closeProductModal()" style="flex: 1;">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Profit Modal -->
+    <div id="profitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Ganancia</h2>
+                <button class="close-btn" onclick="closeProfitModal()">&times;</button>
+            </div>
+            <form id="profitForm">
+                <input type="hidden" id="profitProductId">
+                <div class="form-group">
+                    <label for="profitProductName">Producto</label>
+                    <input type="text" id="profitProductName" disabled style="background-color: #f5f5f5;">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="profitSalePrice">Precio Venta *</label>
+                        <input type="number" id="profitSalePrice" step="0.01" min="0" required readonly style="background-color: #f5f5f5;">
+                    </div>
+                    <div class="form-group">
+                        <label for="profitPurchasePrice">Costo Compra *</label>
+                        <input type="number" id="profitPurchasePrice" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="profitGanancia">Ganancia</label>
+                    <input type="number" id="profitGanancia" step="0.01" min="0" disabled style="background-color: #f5f5f5;">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar Ganancia</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeProfitModal()" style="flex: 1;">Cancelar</button>
                 </div>
             </form>
         </div>
@@ -1063,54 +1104,98 @@
     </div>
 
     <script>
+                // Daily Close Dashboard Functions
+                let dailyCloseData = [];
+                let dailyCloseCurrentPage = 1;
+                let dailyCloseItemsPerPage = 7;
+
+                function initializeDailyClose() {
+                    const dateInput = document.getElementById('closeDateFilter');
+                    if (!dateInput) return;
+                    if (!dateInput.value) {
+                        const today = new Date();
+                        dateInput.value = today.toISOString().split('T')[0];
+                    }
+                    loadDailyCloseDashboard();
+                }
+
+                function loadDailyCloseDashboard() {
+                    const selectedDate = document.getElementById('closeDateFilter').value;
+                    if (!selectedDate) return;
+
+                    fetch(`/api/sold-products?date=${selectedDate}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            dailyCloseData = data;
+                            // Totals
+                            // Sumar todas las cantidades vendidas
+                            const totalCantidadVendida = data.reduce((s, d) => s + parseInt(d.quantity || 0), 0);
+                            document.getElementById('dailyTransactionCount').textContent = totalCantidadVendida;
+                            // Facturas distintas
+                            const invoicesSet = new Set(data.map(d => d.invoice_number));
+                            document.getElementById('dailyInvoiceCount').textContent = invoicesSet.size;
+                            const totalSales = data.reduce((s, d) => s + parseFloat(d.price_total || 0), 0);
+                            document.getElementById('dailyTotalSales').textContent = '$' + totalSales.toFixed(2);
+                            dailyCloseCurrentPage = 1;
+                            displayDailyClosePage();
+                        })
+                        .catch(err => showError('Error al cargar cierre del día: ' + err));
+                }
+
+                function displayDailyClosePage() {
+                    const tbody = document.getElementById('dailyProductsTable');
+                    const startIndex = (dailyCloseCurrentPage - 1) * dailyCloseItemsPerPage;
+                    const pageData = dailyCloseData.slice(startIndex, startIndex + dailyCloseItemsPerPage);
+
+                    if (!pageData.length) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay productos vendidos en esta fecha</td></tr>';
+                        document.getElementById('dailyProductsPagination').innerHTML = '';
+                        return;
+                    }
+
+                    tbody.innerHTML = pageData.map(item => {
+                        const dateStr = item.invoice_date || item.created_at;
+                        const dt = new Date(dateStr);
+                        const timeString = isNaN(dt.getTime()) ? '—' : dt.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+                        return `
+                        <tr>
+                            <td>${item.product_name || '—'}</td>
+                            <td>${item.quantity}</td>
+                            <td>$${parseFloat(item.price_total).toFixed(2)}</td>
+                            <td>${timeString}</td>
+                            <td>${item.invoice_number}</td>
+                        </tr>
+                    `;
+                    }).join('');
+
+                    const totalPages = Math.ceil(dailyCloseData.length / dailyCloseItemsPerPage);
+                    let paginationHTML = '';
+                    for (let i = 1; i <= totalPages; i++) {
+                        paginationHTML += `<button class="pagination-btn ${i === dailyCloseCurrentPage ? 'active' : ''}" onclick="dailyCloseCurrentPage = ${i}; displayDailyClosePage();">${i}</button>`;
+                    }
+                    document.getElementById('dailyProductsPagination').innerHTML = paginationHTML;
+                }
         let products = [];
         let allInvoices = [];
         let lowStockProducts = [];
+        let profitsData = [];
         let currentProductId = null;
         let invoiceItemCount = 0;
         let currentInvoiceDetails = null;
 
         // Pagination variables
-        let transactionsData = [];
-        let revenueData = [];
-        let transactionsCurrentPage = 1;
-        let revenueCurrentPage = 1;
         let productsCurrentPage = 1;
         let invoicesCurrentPage = 1;
         let lowStockCurrentPage = 1;
+        let profitsCurrentPage = 1;
         const itemsPerPage = 4;
         const itemsPerPageProducts = 7;
         const itemsPerPageInvoices = 6;
         const itemsPerPageLowStock = 5;
+        const itemsPerPageProfits = 7;
 
         // Tab Switching
-        function switchTab(tabName) {
-            // Hide all sections
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            // Remove active class from all tabs
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-
-            // Show selected section
-            document.getElementById(tabName).classList.add('active');
-            
-            // Add active class to clicked tab
-            event.target.classList.add('active');
-
-            // Load data based on tab
-            if (tabName === 'inventory') {
-                loadProducts();
-            } else if (tabName === 'invoices') {
-                loadInvoices();
-            } else if (tabName === 'statistics') {
-                loadDailySalesData();
-                loadDailyRevenueData();
-            }
-        }
+        // ...la versión correcta de switchTab ya está definida más abajo...
 
         // Load Products
         function loadProducts() {
@@ -1516,7 +1601,8 @@
 
                 if (productId && quantity > 0 && price > 0) {
                     if (quantity > stock) {
-                        throw new Error(`Stock insuficiente para ${row.querySelector('.product-select').selectedOptions[0].text.split('(')[0]}`);
+                        showError(`Stock insuficiente para ${row.querySelector('.product-select').selectedOptions[0].text.split('(')[0]}`);
+                        return;
                     }
                     items.push({
                         product_id: productId,
@@ -1757,206 +1843,37 @@
             }
         }
 
-        // Chart instances
-        let dailySalesChart = null;
-        let dailyRevenueChart = null;
-
-        // Filter Statistics by Date Range
-        function filterStatisticsByDateRange() {
-            const startDate = document.getElementById('dateStart').value;
-            const endDate = document.getElementById('dateEnd').value;
-
-            if (!startDate || !endDate) {
-                showError('Por favor selecciona ambas fechas');
-                return;
-            }
-
-            fetch(`/api/statistics/daily-sales-by-range?startDate=${startDate}&endDate=${endDate}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Convertir objeto a array
-                    const dataArray = Object.values(data);
-                    
-                    // Calcular totales
-                    const totalTransactions = dataArray.reduce((sum, item) => sum + item.transactionCount, 0);
-                    const totalRevenue = dataArray.reduce((sum, item) => sum + item.revenue, 0);
-
-                    // Llenar tabla de transacciones
-                    transactionsData = dataArray.map(item => ({
-                        date: item.date,
-                        count: item.transactionCount
-                    }));
-                    transactionsCurrentPage = 1;
-                    displayTransactionsPage(1);
-
-                    // Llenar tabla de ingresos
-                    revenueData = dataArray.map(item => ({
-                        date: item.date,
-                        revenue: item.revenue
-                    }));
-                    revenueCurrentPage = 1;
-                    displayRevenuePage(1);
-
-                    showSuccess(`✓ Datos filtrados: ${totalTransactions} transacciones, Total: $${totalRevenue.toLocaleString('es-CO', { minimumFractionDigits: 0 })}`);
-                })
-                .catch(error => showError('Error al filtrar datos: ' + error));
-        }
-
-        // Load Daily Sales Data
-        function loadDailySalesData() {
-            fetch('/api/statistics/daily-sales')
-                .then(response => response.json())
-                .then(data => {
-                    // Calcular totales
-                    const totalSales = data.sales.reduce((sum, val) => sum + val, 0);
-                    const avgDailySales = Math.round(totalSales / data.sales.length);
-                    
-                    // Actualizar resumen
-                    document.getElementById('totalProductsSold').textContent = totalSales.toLocaleString();
-                    document.getElementById('avgDailySales').textContent = avgDailySales.toLocaleString();
-                    
-                    // Llenar tabla de transacciones
-                    fillTransactionsTable(data);
-                })
-                .catch(error => showError('Error al cargar datos de ventas: ' + error));
-        }
-
-        // Llenar tabla de transacciones
-        function fillTransactionsTable(data) {
-            // Guardar datos completos
-            transactionsData = [];
-            for (let i = 0; i < data.dates.length; i++) {
-                transactionsData.push({
-                    date: data.dates[i],
-                    count: data.transactionCount ? data.transactionCount[i] : 0
-                });
-            }
-
-            // Mostrar primera página
-            transactionsCurrentPage = 1;
-            displayTransactionsPage(1);
-        }
-
-        // Mostrar página de transacciones
-        function displayTransactionsPage(page) {
-            const tableBody = document.getElementById('transactionsTable');
-            tableBody.innerHTML = '';
-
-            const start = (page - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const pageData = transactionsData.slice(start, end);
-
-            pageData.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.date}</td>
-                    <td>${item.count}</td>
-                `;
-                tableBody.appendChild(row);
+        function switchTab(tabName, tabButton) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
             });
 
-            // Generar paginación
-            generateTransactionsPagination();
-        }
-
-        // Generar botones de paginación para transacciones
-        function generateTransactionsPagination() {
-            const paginationContainer = document.getElementById('transactionsPagination');
-            paginationContainer.innerHTML = '';
-
-            const totalPages = Math.ceil(transactionsData.length / itemsPerPage);
-
-            if (totalPages <= 1) return;
-
-            // Números de página
-            for (let i = 1; i <= totalPages; i++) {
-                const btn = document.createElement('button');
-                btn.className = 'pagination-btn' + (i === transactionsCurrentPage ? ' active' : '');
-                btn.textContent = i;
-                btn.onclick = () => {
-                    transactionsCurrentPage = i;
-                    displayTransactionsPage(i);
-                };
-                paginationContainer.appendChild(btn);
-            }
-        }
-
-        // Load Daily Revenue Data
-        function loadDailyRevenueData() {
-            fetch('/api/statistics/daily-revenue')
-                .then(response => response.json())
-                .then(data => {
-                    // Calcular totales
-                    const totalRevenue = data.revenue.reduce((sum, val) => sum + val, 0);
-                    const avgDailyRevenue = totalRevenue / data.revenue.length;
-                    
-                    // Actualizar resumen
-                    document.getElementById('totalRevenueAmount').textContent = '$' + totalRevenue.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                    document.getElementById('avgDailyRevenue').textContent = '$' + avgDailyRevenue.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                    
-                    // Llenar tabla de ingresos
-                    fillRevenueTable(data);
-                })
-                .catch(error => showError('Error al cargar datos de ingresos: ' + error));
-        }
-
-        // Llenar tabla de ingresos
-        function fillRevenueTable(data) {
-            // Guardar datos completos
-            revenueData = [];
-            for (let i = 0; i < data.dates.length; i++) {
-                revenueData.push({
-                    date: data.dates[i],
-                    revenue: data.revenue[i]
-                });
-            }
-
-            // Mostrar primera página
-            revenueCurrentPage = 1;
-            displayRevenuePage(1);
-        }
-
-        // Mostrar página de ingresos
-        function displayRevenuePage(page) {
-            const tableBody = document.getElementById('revenueTable');
-            tableBody.innerHTML = '';
-
-            const start = (page - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const pageData = revenueData.slice(start, end);
-
-            pageData.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.date}</td>
-                    <td>$${item.revenue.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                `;
-                tableBody.appendChild(row);
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
             });
 
-            // Generar paginación
-            generateRevenuePagination();
-        }
+            // Show selected section
+            const section = document.getElementById(tabName);
+            if (section) {
+                section.classList.add('active');
+            }
 
-        // Generar botones de paginación para ingresos
-        function generateRevenuePagination() {
-            const paginationContainer = document.getElementById('revenuePagination');
-            paginationContainer.innerHTML = '';
+            // Mark clicked tab as active (avoid relying on global `event`)
+            if (tabButton) {
+                tabButton.classList.add('active');
+            }
 
-            const totalPages = Math.ceil(revenueData.length / itemsPerPage);
-
-            if (totalPages <= 1) return;
-
-            // Números de página
-            for (let i = 1; i <= totalPages; i++) {
-                const btn = document.createElement('button');
-                btn.className = 'pagination-btn' + (i === revenueCurrentPage ? ' active' : '');
-                btn.textContent = i;
-                btn.onclick = () => {
-                    revenueCurrentPage = i;
-                    displayRevenuePage(i);
-                };
-                paginationContainer.appendChild(btn);
+            // Load data based on tab
+            if (tabName === 'inventory') {
+                loadProducts();
+            } else if (tabName === 'profits') {
+                loadProfits();
+            } else if (tabName === 'invoices') {
+                loadInvoices();
+            } else if (tabName === 'daily-close') {
+                initializeDailyClose();
             }
         }
 
@@ -2007,18 +1924,154 @@
             }
         }
 
+        // Load Profits
+        function loadProfits() {
+            fetch('/api/products')
+                .then(response => response.json())
+                .then(data => {
+                    profitsData = data;
+                    profitsCurrentPage = 1;
+                    displayProfitsPage(1);
+                })
+                .catch(error => showError('Error al cargar ganancias: ' + error));
+        }
+
+        // Display Profits Page
+        function displayProfitsPage(page) {
+            const tbody = document.getElementById('profitsTable');
+            
+            if (profitsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay productos</td></tr>';
+                document.getElementById('profitsPagination').innerHTML = '';
+                return;
+            }
+
+            const start = (page - 1) * itemsPerPageProfits;
+            const end = start + itemsPerPageProfits;
+            const pageData = profitsData.slice(start, end);
+
+            tbody.innerHTML = pageData.map(product => {
+                const cost = product.cost || {};
+                const salePrice = product.price;
+                const purchasePrice = cost.purchase_price || 0;
+                const profit = salePrice - purchasePrice;
+                const margin = salePrice > 0 ? ((profit / salePrice) * 100).toFixed(1) : 0;
+
+                return `
+                    <tr>
+                        <td><strong>${product.name}</strong></td>
+                        <td>$${parseFloat(salePrice).toFixed(2)}</td>
+                        <td>$${parseFloat(purchasePrice).toFixed(2)}</td>
+                        <td><span class="badge badge-success">$${parseFloat(profit).toFixed(2)}</span></td>
+                        <td>${margin}%</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-secondary" onclick="editProfit(${product.id}, '${product.name}', ${salePrice}, ${purchasePrice}, ${profit})">Editar</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Generate pagination buttons
+            const totalPages = Math.ceil(profitsData.length / itemsPerPageProfits);
+            const paginationContainer = document.getElementById('profitsPagination');
+            paginationContainer.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'pagination-btn ' + (i === page ? 'active' : '');
+                btn.textContent = i;
+                btn.onclick = () => displayProfitsPage(i);
+                paginationContainer.appendChild(btn);
+            }
+        }
+
+        // Filter Profits
+        function filterProfits() {
+            const searchTerm = document.getElementById('profitSearch').value.toLowerCase();
+            const filtered = profitsData.filter(p => 
+                p.name.toLowerCase().includes(searchTerm)
+            );
+            const tbody = document.getElementById('profitsTable');
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron productos</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(product => {
+                const cost = product.cost || {};
+                const salePrice = product.price;
+                const purchasePrice = cost.purchase_price || 0;
+                const profit = salePrice - purchasePrice;
+                const margin = salePrice > 0 ? ((profit / salePrice) * 100).toFixed(1) : 0;
+
+                return `
+                    <tr>
+                        <td><strong>${product.name}</strong></td>
+                        <td>$${parseFloat(salePrice).toFixed(2)}</td>
+                        <td>$${parseFloat(purchasePrice).toFixed(2)}</td>
+                        <td><span class="badge badge-success">$${parseFloat(profit).toFixed(2)}</span></td>
+                        <td>${margin}%</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-secondary" onclick="editProfit(${product.id}, '${product.name}', ${salePrice}, ${purchasePrice}, ${profit})">Editar</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Edit Profit
+        function editProfit(productId, productName, salePrice, purchasePrice, profit) {
+            document.getElementById('profitProductId').value = productId;
+            document.getElementById('profitProductName').value = productName;
+            document.getElementById('profitSalePrice').value = salePrice;
+            document.getElementById('profitPurchasePrice').value = purchasePrice;
+            document.getElementById('profitGanancia').value = profit;
+            document.getElementById('profitModal').classList.add('show');
+        }
+
+        // Close Profit Modal
+        function closeProfitModal() {
+            document.getElementById('profitModal').classList.remove('show');
+        }
+
+        // Save Profit
+        document.getElementById('profitForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const productId = document.getElementById('profitProductId').value;
+            const purchasePrice = parseFloat(document.getElementById('profitPurchasePrice').value);
+            const salePrice = parseFloat(document.getElementById('profitSalePrice').value);
+            const profit = salePrice - purchasePrice;
+
+            fetch(`/api/products/${productId}/cost`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                },
+                body: JSON.stringify({
+                    purchase_price: purchasePrice,
+                    profit: profit
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showSuccess('✓ Ganancia actualizada correctamente');
+                closeProfitModal();
+                loadProfits();
+            })
+            .catch(error => showError('Error: ' + error.message));
+        });
+
         // Load initial data
+        // ...existing code...
+
         document.addEventListener('DOMContentLoaded', function() {
             loadProducts();
             loadLowStockProducts();
-            
-            // Set default date range (last 30 days)
-            const endDate = new Date();
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - 30);
-            
-            document.getElementById('dateStart').valueAsDate = startDate;
-            document.getElementById('dateEnd').valueAsDate = endDate;
         });
     </script>
 </body>

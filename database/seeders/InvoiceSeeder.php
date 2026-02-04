@@ -18,48 +18,70 @@ class InvoiceSeeder extends Seeder
     {
         $products = Product::all();
 
-        // Crear facturas para los últimos 30 días
-        for ($day = 30; $day >= 0; $day--) {
-            $invoiceDate = Carbon::now()->subDays($day)->setHour(rand(8, 20))->setMinute(rand(0, 59));
+        // Crear 10 facturas del 2026-02-03
+        for ($i = 0; $i < 10; $i++) {
+            $invoiceDate = Carbon::parse('2026-02-03')->setHour(rand(8, 20))->setMinute(rand(0, 59));
             
-            // 2-4 facturas por día
-            $invoicesPerDay = rand(2, 4);
+            $invoice = Invoice::create([
+                'invoice_number' => 'INV-20260203-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
+                'total' => 0,
+                'status' => 'completed',
+                'notes' => 'Factura de prueba',
+                'invoice_date' => $invoiceDate
+            ]);
+
+            // Usar cada producto para una factura diferente
+            $product = $products[$i];
+            $quantity = rand(1, 5);
+            $price = $product->price;
+            $subtotal = $quantity * $price;
+
+            InvoiceItem::create([
+                'invoice_id' => $invoice->id,
+                'product_id' => $product->id,
+                'quantity' => $quantity,
+                'price' => $price,
+                'subtotal' => $subtotal
+            ]);
+
+            // Descontar del stock
+            $product->decrement('stock', $quantity);
+
+            // Actualizar total de la factura
+            $invoice->update(['total' => $subtotal]);
+        }
+
+        // Crear 10 facturas del 2026-02-02
+        for ($i = 0; $i < 10; $i++) {
+            $invoiceDate = Carbon::parse('2026-02-02')->setHour(rand(8, 20))->setMinute(rand(0, 59));
             
-            for ($i = 0; $i < $invoicesPerDay; $i++) {
-                $invoice = Invoice::create([
-                    'invoice_number' => 'INV-' . $invoiceDate->format('YmdHis') . '-' . ($i + 1),
-                    'total' => 0,
-                    'status' => 'completed',
-                    'notes' => 'Factura de prueba',
-                    'invoice_date' => $invoiceDate
-                ]);
+            $invoice = Invoice::create([
+                'invoice_number' => 'INV-20260202-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
+                'total' => 0,
+                'status' => 'completed',
+                'notes' => 'Factura de prueba',
+                'invoice_date' => $invoiceDate
+            ]);
 
-                // 2-5 items por factura
-                $itemCount = rand(2, 5);
-                $total = 0;
-                $selectedProducts = $products->random(min($itemCount, $products->count()));
+            // Usar cada producto para una factura diferente
+            $product = $products[$i];
+            $quantity = rand(1, 5);
+            $price = $product->price;
+            $subtotal = $quantity * $price;
 
-                foreach ($selectedProducts as $product) {
-                    $quantity = rand(1, 10);
-                    $price = $product->price;
-                    $subtotal = $quantity * $price;
-                    $total += $subtotal;
+            InvoiceItem::create([
+                'invoice_id' => $invoice->id,
+                'product_id' => $product->id,
+                'quantity' => $quantity,
+                'price' => $price,
+                'subtotal' => $subtotal
+            ]);
 
-                    InvoiceItem::create([
-                        'invoice_id' => $invoice->id,
-                        'product_id' => $product->id,
-                        'quantity' => $quantity,
-                        'price' => $price,
-                        'subtotal' => $subtotal
-                    ]);
+            // Descontar del stock
+            $product->decrement('stock', $quantity);
 
-                    // Descontar del stock
-                    $product->decrement('stock', $quantity);
-                }
-
-                // Actualizar total de la factura
-                $invoice->update(['total' => $total]);
-            }
+            // Actualizar total de la factura
+            $invoice->update(['total' => $subtotal]);
         }
     }
 }
