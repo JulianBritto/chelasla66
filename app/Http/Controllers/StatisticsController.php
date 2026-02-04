@@ -4,10 +4,104 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class StatisticsController extends Controller
 {
+    public function topProducts(Request $request): JsonResponse
+    {
+        $limit = (int) $request->query('limit', 5);
+        $limit = max(1, min($limit, 50));
+
+        $rows = DB::table('sold_products as sp')
+            ->join('products as p', 'p.id', '=', 'sp.product_id')
+            ->select([
+                'p.id as product_id',
+                'p.name as product_name',
+                'p.description as product_description',
+                DB::raw('SUM(sp.quantity) as total_quantity'),
+                DB::raw('SUM(sp.price_total) as total_sales'),
+            ])
+            ->groupBy('p.id', 'p.name', 'p.description')
+            ->orderByDesc('total_quantity')
+            ->orderByDesc('total_sales')
+            ->limit($limit)
+            ->get();
+
+        $result = $rows->map(function ($r) {
+            return [
+                'product_id' => (int) $r->product_id,
+                'product_name' => $r->product_name,
+                'product_description' => $r->product_description,
+                'total_quantity' => (int) $r->total_quantity,
+                'total_sales' => (float) $r->total_sales,
+            ];
+        });
+
+        return response()->json($result);
+    }
+
+    public function topDays(Request $request): JsonResponse
+    {
+        $limit = (int) $request->query('limit', 4);
+        $limit = max(1, min($limit, 31));
+
+        $topProductsLimit = (int) $request->query('topProducts', 3);
+        $topProductsLimit = max(1, min($topProductsLimit, 10));
+
+        // We use invoices.created_at to represent the real "fecha de creación" of the invoice.
+        $days = DB::table('sold_products as sp')
+            ->join('invoices as i', 'i.id', '=', 'sp.invoice_id')
+            ->select([
+                DB::raw('DATE(i.created_at) as day'),
+                DB::raw('SUM(sp.quantity) as total_quantity'),
+                DB::raw('SUM(sp.price_total) as total_sales'),
+            ])
+            ->groupBy(DB::raw('DATE(i.created_at)'))
+            ->orderByDesc('total_quantity')
+            ->orderByDesc('total_sales')
+            ->limit($limit)
+            ->get();
+
+        $result = $days->map(function ($d) use ($topProductsLimit) {
+            $topProducts = DB::table('sold_products as sp')
+                ->join('invoices as i', 'i.id', '=', 'sp.invoice_id')
+                ->join('products as p', 'p.id', '=', 'sp.product_id')
+                ->whereDate('i.created_at', $d->day)
+                ->select([
+                    'p.id as product_id',
+                    'p.name as product_name',
+                    DB::raw('SUM(sp.quantity) as quantity'),
+                    DB::raw('SUM(sp.price_total) as total_sales'),
+                ])
+                ->groupBy('p.id', 'p.name')
+                ->orderByDesc('quantity')
+                ->orderByDesc('total_sales')
+                ->limit($topProductsLimit)
+                ->get()
+                ->map(function ($p) {
+                    return [
+                        'product_id' => (int) $p->product_id,
+                        'product_name' => $p->product_name,
+                        'quantity' => (int) $p->quantity,
+                        'total_sales' => (float) $p->total_sales,
+                    ];
+                })
+                ->values();
+
+            return [
+                'date' => (string) $d->day, // YYYY-MM-DD
+                'total_quantity' => (int) $d->total_quantity,
+                'total_sales' => (float) $d->total_sales,
+                'top_products' => $topProducts,
+            ];
+        })->values();
+
+        return response()->json($result);
+    }
+
     public function getUnifiedStatistics(): JsonResponse
     {
         $last30Days = [];

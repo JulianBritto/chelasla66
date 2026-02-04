@@ -41,6 +41,10 @@ Route::get('/statistics/unified', [StatisticsController::class, 'getUnifiedStati
 // Sold products (for daily close view)
 Route::get('/sold-products', [SoldProductController::class, 'index']);
 
+// Statistics
+Route::get('/statistics/top-products', [StatisticsController::class, 'topProducts']);
+Route::get('/statistics/top-days', [StatisticsController::class, 'topDays']);
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });

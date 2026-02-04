@@ -667,6 +667,13 @@ input:focus, textarea:focus, select:focus {
     border-bottom: none;
 }
 
+/* Center data only inside the Statistics tab */
+#statistics .stats-table th,
+#statistics .stats-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
 /* Pagination Styles */
 .pagination-container {
     display: flex;

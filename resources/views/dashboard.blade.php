@@ -26,6 +26,7 @@
             <button class="nav-tab" onclick="switchTab('profits', this)">💰 Ganancias</button>
             <button class="nav-tab" onclick="switchTab('invoices', this)">🧾 Facturas</button>
             <button class="nav-tab" onclick="switchTab('daily-close', this)">🔒 Cierre del Día</button>
+            <button class="nav-tab" onclick="switchTab('statistics', this)">📈 Estadísticas</button>
         </div>
 
         <!-- Content -->
@@ -269,6 +270,55 @@
                     </table>
                 </div>
                 <div class="pagination-container" id="profitsPagination"></div>
+            </div>
+
+            <!-- Statistics Section (placeholder) -->
+            <div id="statistics" class="section">
+                <div class="section-header">
+                    <h2>📈 Estadísticas</h2>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <h3 style="margin-bottom: 15px;">🏆 Top 5 productos más vendidos</h3>
+                    <div class="table-container">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Descripción</th>
+                                    <th>Cantidad</th>
+                                    <th>Total vendido</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topProductsTable">
+                                <tr>
+                                    <td colspan="4" class="text-center">Cargando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <h3 style="margin-bottom: 15px;">📅 Top 4 días con más productos vendidos</h3>
+                    <div class="table-container">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha (Año-Mes-Día)</th>
+                                    <th>Productos vendidos</th>
+                                    <th>Top 3 productos</th>
+                                    <th>Total vendido</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topDaysTable">
+                                <tr>
+                                    <td colspan="4" class="text-center">Cargando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -1342,7 +1392,87 @@
                 loadInvoices();
             } else if (tabName === 'daily-close') {
                 initializeDailyClose();
+            } else if (tabName === 'statistics') {
+                loadStatistics();
             }
+        }
+
+        function loadStatistics() {
+            loadTopProducts();
+            loadTopDays();
+        }
+
+        function loadTopProducts() {
+            const tbody = document.getElementById('topProductsTable');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Cargando...</td></tr>';
+
+            fetch('/api/statistics/top-products?limit=5')
+                .then(r => {
+                    if (!r.ok) throw new Error('No se pudo cargar el top de productos');
+                    return r.json();
+                })
+                .then(rows => {
+                    if (!rows || rows.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Aún no hay ventas registradas</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = rows.map(row => {
+                        const desc = row.product_description || '-';
+                        return `
+                            <tr>
+                                <td><strong>${row.product_name}</strong></td>
+                                <td>${desc}</td>
+                                <td>${row.total_quantity}</td>
+                                <td><strong>$${parseFloat(row.total_sales).toFixed(2)}</strong></td>
+                            </tr>
+                        `;
+                    }).join('');
+                })
+                .catch(err => {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Error al cargar</td></tr>';
+                    showError('Error al cargar estadísticas: ' + err.message);
+                });
+        }
+
+        function loadTopDays() {
+            const tbody = document.getElementById('topDaysTable');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Cargando...</td></tr>';
+
+            fetch('/api/statistics/top-days?limit=4&topProducts=3')
+                .then(r => {
+                    if (!r.ok) throw new Error('No se pudo cargar el top de días');
+                    return r.json();
+                })
+                .then(rows => {
+                    if (!rows || rows.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Aún no hay ventas registradas</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = rows.map(day => {
+                        const topProducts = (day.top_products || [])
+                            .map(p => `${p.product_name} - ${p.quantity}`)
+                            .join('<br>') || '-';
+
+                        return `
+                            <tr>
+                                <td><strong>${day.date}</strong></td>
+                                <td>${day.total_quantity}</td>
+                                <td>${topProducts}</td>
+                                <td><strong>$${parseFloat(day.total_sales).toFixed(2)}</strong></td>
+                            </tr>
+                        `;
+                    }).join('');
+                })
+                .catch(err => {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Error al cargar</td></tr>';
+                    showError('Error al cargar estadísticas: ' + err.message);
+                });
         }
 
         // Load Low Stock Products
@@ -1350,7 +1480,7 @@
             fetch('/api/products')
                 .then(response => response.json())
                 .then(data => {
-                    lowStockProducts = data.filter(p => p.stock < 5).sort((a, b) => b.stock - a.stock);
+                    lowStockProducts = data.filter(p => p.stock <= 5).sort((a, b) => b.stock - a.stock);
                     lowStockCurrentPage = 1;
                     displayLowStockPage(1);
                 })

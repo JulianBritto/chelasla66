@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $totalRevenue = Invoice::sum('total');
         
         $recentInvoices = Invoice::orderBy('created_at', 'desc')->take(5)->get();
-        $lowStockProducts = Product::where('stock', '<', 5)->orderBy('stock', 'desc')->get();
+        $lowStockProducts = Product::where('stock', '<=', 5)->orderBy('stock', 'desc')->get();
 
         return view('dashboard', [
             'totalProducts' => $totalProducts,

@@ -15,7 +15,7 @@ class InvoiceController extends Controller
 {
     public function getAll(): JsonResponse
     {
-        $invoices = Invoice::with('items.product')->get();
+        $invoices = Invoice::with('items.product')->orderBy('created_at', 'desc')->get();
         return response()->json($invoices);
     }
 
