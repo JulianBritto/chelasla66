@@ -29,6 +29,7 @@ Route::post('/products/{product}/cost', [ProductController::class, 'updateCost']
 Route::get('/invoices', [InvoiceController::class, 'getAll']);
 Route::post('/invoices', [InvoiceController::class, 'store']);
 Route::get('/invoices/{invoice}', [InvoiceController::class, 'show']);
+Route::put('/invoices/{invoice}', [InvoiceController::class, 'update']);
 Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy']);
 
 // Statistics Routes

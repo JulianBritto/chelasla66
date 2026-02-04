@@ -12,13 +12,18 @@ class SoldProductController extends Controller
     {
         $date = $request->query('date');
 
-        $query = SoldProduct::with('product');
+        $query = SoldProduct::with(['product', 'invoice']);
 
         if ($date) {
-            $query->whereDate('created_at', $date);
+            $query->where(function ($q) use ($date) {
+                $q->whereDate('invoice_date', $date)
+                    ->orWhere(function ($q2) use ($date) {
+                        $q2->whereNull('invoice_date')->whereDate('created_at', $date);
+                    });
+            });
         }
 
-        $sold = $query->orderBy('created_at', 'desc')->get();
+        $sold = $query->orderBy('invoice_date', 'desc')->orderBy('created_at', 'desc')->get();
 
         // Map to a simple structure
         $result = $sold->map(function ($s) {
@@ -26,12 +31,14 @@ class SoldProductController extends Controller
                 'id' => $s->id,
                 'invoice_id' => $s->invoice_id,
                 'invoice_number' => $s->invoice_number,
+                'invoice_created_at' => $s->invoice ? $s->invoice->created_at : null,
                 'product_id' => $s->product_id,
                 'product_name' => $s->product ? $s->product->name : null,
                 'quantity' => $s->quantity,
                 'price_total' => (float) $s->price_total,
                 'invoice_date' => $s->invoice_date ?? $s->created_at,
                 'created_at' => $s->created_at,
+                'updated_at' => $s->updated_at,
             ];
         });
 

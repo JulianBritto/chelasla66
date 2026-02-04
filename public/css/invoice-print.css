@@ -1,0 +1,110 @@
+@page {
+	margin: 10mm;
+}
+
+body {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	margin: 0;
+	color: #000;
+}
+
+.ticket {
+	width: 340px;
+	margin: 0 auto;
+}
+
+.ticket-title {
+	text-align: center;
+	font-weight: 800;
+	font-size: 18px;
+	letter-spacing: 0.5px;
+	margin: 8px 0 10px 0;
+}
+
+.ticket-meta {
+	text-align: left;
+	margin-bottom: 8px;
+	line-height: 1.35;
+}
+
+.line {
+	border-top: 2px solid #000;
+	margin: 10px 0;
+}
+
+table.ticket-items {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+table.ticket-items th {
+	font-weight: 700;
+	text-align: left;
+	padding: 6px 0;
+	border-bottom: 1px solid #000;
+}
+
+table.ticket-items td {
+	padding: 6px 0;
+	border-bottom: 1px dashed #bbb;
+	vertical-align: top;
+}
+
+table.ticket-items tr:last-child td {
+	border-bottom: none;
+}
+
+.col-qty {
+	width: 40px;
+	text-align: left;
+}
+
+.col-desc {
+	text-align: left;
+	padding-right: 6px;
+	word-break: break-word;
+}
+
+.col-price,
+.col-total {
+	width: 78px;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.ticket-summary {
+	margin-top: 6px;
+}
+
+.sum-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	line-height: 1.4;
+}
+
+.sum-row.total {
+	font-weight: 800;
+	font-size: 16px;
+	margin-top: 6px;
+}
+
+.notes {
+	margin-top: 10px;
+	font-size: 11px;
+	color: #333;
+}
+
+.thanks {
+	margin-top: 12px;
+	text-align: center;
+	font-weight: 700;
+}
+
+@media print {
+	body {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+}

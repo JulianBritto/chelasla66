@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvoiceTicketPdfController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,4 +16,7 @@ use App\Http\Controllers\DashboardController;
 */
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+Route::get('/invoices/{invoice}/ticket', InvoiceTicketPdfController::class)
+	->name('invoices.ticket');
 

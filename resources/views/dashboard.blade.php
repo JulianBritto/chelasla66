@@ -4,724 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Micheladas la 66 - Inventario y Facturación</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            min-height: 100vh;
-        }
-
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        /* Navigation Tabs */
-        .nav-tabs {
-            display: flex;
-            border-bottom: 2px solid #e0e0e0;
-            background: #f9f9f9;
-            flex-wrap: wrap;
-        }
-
-        .nav-tab {
-            padding: 15px 30px;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 16px;
-            font-weight: 500;
-            color: #666;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .nav-tab:hover {
-            color: #667eea;
-        }
-
-        .nav-tab.active {
-            color: #667eea;
-            border-bottom: 3px solid #667eea;
-            margin-bottom: -2px;
-        }
-
-        /* Content Sections */
-        .content {
-            padding: 30px;
-        }
-
-        .section {
-            display: none;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        /* Search Bar */
-        .search-bar {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .search-bar input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        /* Dashboard Section */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-            transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-card h3 {
-            font-size: 14px;
-            opacity: 0.9;
-            margin-bottom: 10px;
-        }
-
-        .stat-card .value {
-            font-size: 32px;
-            font-weight: bold;
-        }
-
-        /* Tables */
-        .table-container {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-top: 20px;
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: #f5f5f5;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #333;
-            border-bottom: 2px solid #e0e0e0;
-            position: sticky;
-            top: 0;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        tr:hover {
-            background: #f9f9f9;
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-
-        .btn-danger {
-            background: #ff6b6b;
-            color: white;
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-
-        .btn-danger:hover {
-            background: #ee5a52;
-        }
-
-        .btn-info {
-            background: #4ecdc4;
-            color: white;
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-
-        .btn-info:hover {
-            background: #45b8af;
-        }
-
-        .btn-success {
-            background: #51cf66;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #40c057;
-        }
-
-        /* Forms */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #333;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            font-family: inherit;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        /* Modals */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            animation: fadeIn 0.3s ease;
-        }
-
-        .modal.show {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            animation: slideIn 0.3s ease;
-            margin: auto;
-        }
-
-        .modal-content-large {
-            max-width: 700px;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-header {
-            margin-bottom: 20px;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 20px;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: #999;
-        }
-
-        .close-btn:hover {
-            color: #333;
-        }
-
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-buttons button {
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-
-        /* Alert Messages */
-        .alert {
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-            display: none;
-            animation: slideDown 0.3s ease;
-        }
-
-        .alert.show {
-            display: block;
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        /* Badge */
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .badge-warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .badge-success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge-danger {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        /* Section Headers */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .section-header h2 {
-            font-size: 24px;
-            color: #333;
-        }
-
-        /* Invoice Items Table */
-        .invoice-items-container {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .invoice-item-row {
-            display: grid;
-            grid-template-columns: 1fr 100px 100px 100px 100px;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 10px;
-            padding: 10px;
-            background: white;
-            border-radius: 4px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .invoice-item-row button {
-            padding: 6px 10px;
-            font-size: 12px;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .low-stock {
-            color: #ff6b6b;
-            font-weight: 600;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-        }
-
-        .empty-state h3 {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-
-        /* Invoice Details Modal */
-        .invoice-details {
-            margin-top: 20px;
-        }
-
-        .invoice-details h3 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .invoice-details-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-
-        .invoice-details-table th,
-        .invoice-details-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .invoice-details-table th {
-            background: #f5f5f5;
-            font-weight: 600;
-        }
-
-        .invoice-summary {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 15px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-        }
-
-        .summary-row.total {
-            font-weight: bold;
-            font-size: 16px;
-            border-top: 2px solid #ddd;
-            padding-top: 10px;
-            margin-top: 10px;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .invoice-item-row {
-                grid-template-columns: 1fr;
-            }
-
-            .nav-tab {
-                padding: 12px 15px;
-                font-size: 14px;
-            }
-
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .modal-content {
-                width: 95%;
-                padding: 20px;
-            }
-        }
-
-        .product-select {
-            width: 100%;
-        }
-
-        /* Charts */
-        .charts-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        .chart-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .chart-card h3 {
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 16px;
-        }
-
-        .chart-canvas {
-            position: relative;
-            height: 300px;
-        }
-
-        /* Summary Cards */
-        .stat-summary-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            color: white;
-        }
-
-        .summary-header h3 {
-            color: white;
-            margin: 0;
-            font-size: 16px;
-        }
-
-        .summary-content {
-            margin-top: 15px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .summary-row:last-child {
-            margin-bottom: 0;
-            border-bottom: none;
-        }
-
-        .summary-label {
-            font-size: 14px;
-            font-weight: 500;
-            opacity: 0.9;
-        }
-
-        .summary-value {
-            font-size: 20px;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        /* Tables Container */
-        .tables-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        .data-table-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .data-table-card h3 {
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 16px;
-        }
-
-        .stats-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .stats-table thead {
-            background-color: #f5f5f5;
-        }
-
-        .stats-table th {
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #333;
-            border-bottom: 2px solid #ddd;
-        }
-
-        .stats-table td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            color: #666;
-        }
-
-        .stats-table tbody tr:hover {
-            background-color: #f9f9f9;
-        }
-
-        .stats-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        /* Pagination Styles */
-        .pagination-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-            gap: 5px;
-        }
-
-        .low-stock-pagination-container {
-            margin-top: 35px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .pagination-btn {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            background-color: white;
-            color: #333;
-            cursor: pointer;
-            border-radius: 4px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .pagination-btn:hover {
-            background-color: #f0f0f0;
-            border-color: #667eea;
-        }
-
-        .pagination-btn.active {
-            background-color: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        .pagination-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .pagination-info {
-            color: #666;
-            font-size: 14px;
-            margin: 0 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 </head>
 <body>
     <div class="container">
@@ -778,7 +61,7 @@
                                         <h3>💰 Total de Ventas</h3>
                                     </div>
                                     <div class="summary-content">
-                                        <div class="summary-value" id="dailyTotalSales" style="font-size: 36px; text-align: center; color: #667eea;">$0</div>
+                                        <div class="summary-value" id="dailyTotalSales" style="font-size: 36px; text-align: center;">$0</div>
                                     </div>
                                 </div>
                             </div>
@@ -793,12 +76,13 @@
                                                 <th>Cantidad Vendida</th>
                                                 <th>Precio Total</th>
                                                 <th>Hora</th>
+                                                <th>Hora actualización</th>
                                                 <th>Nº Factura</th>
                                             </tr>
                                         </thead>
                                         <tbody id="dailyProductsTable">
                                             <tr>
-                                                <td colspan="5" class="text-center">Selecciona una fecha para ver los datos</td>
+                                                <td colspan="6" class="text-center">Selecciona una fecha para ver los datos</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -863,6 +147,7 @@
                                         <th>Fecha</th>
                                         <th>Total</th>
                                         <th>Estado</th>
+                                        <th>Ver</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -872,10 +157,13 @@
                                             <td>{{ $invoice->invoice_date->format('d/m/Y H:i') }}</td>
                                             <td>${{ number_format($invoice->total, 2) }}</td>
                                             <td><span class="badge badge-success">{{ $invoice->status }}</span></td>
+                                            <td>
+                                                <button class="btn btn-info" onclick="viewInvoice({{ $invoice->id }})">Ver</button>
+                                            </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-center">No hay facturas registradas</td>
+                                            <td colspan="5" class="text-center">No hay facturas registradas</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -934,6 +222,7 @@
                             <tr>
                                 <th>Número de Factura</th>
                                 <th>Fecha</th>
+                                <th>Fecha actualización</th>
                                 <th>Total</th>
                                 <th>Items</th>
                                 <th>Estado</th>
@@ -942,7 +231,7 @@
                         </thead>
                         <tbody id="invoicesTable">
                             <tr>
-                                <td colspan="6" class="text-center">Cargando facturas...</td>
+                                <td colspan="7" class="text-center">Cargando facturas...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1086,6 +375,32 @@
         </div>
     </div>
 
+    <!-- Edit Invoice Modal -->
+    <div id="invoiceEditModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Editar Factura</h2>
+                <button class="close-btn" onclick="closeEditInvoiceModal()">&times;</button>
+            </div>
+            <form id="invoiceEditForm">
+                <div class="invoice-items-container">
+                    <h3 style="margin-bottom: 15px;">Productos y Cantidades</h3>
+                    <div id="invoiceEditItemsContainer"></div>
+                    <button type="button" class="btn btn-secondary" onclick="addEditInvoiceItem()">+ Agregar Producto</button>
+                </div>
+
+                <div style="background: #f0f0f0; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                    <strong>Total: $<span id="invoiceEditTotal">0.00</span></strong>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditInvoiceModal()" style="flex: 1;">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- View Invoice Modal -->
     <div id="invoiceDetailsModal" class="modal">
         <div class="modal-content modal-content-large">
@@ -1148,21 +463,30 @@
                     const pageData = dailyCloseData.slice(startIndex, startIndex + dailyCloseItemsPerPage);
 
                     if (!pageData.length) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay productos vendidos en esta fecha</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay productos vendidos en esta fecha</td></tr>';
                         document.getElementById('dailyProductsPagination').innerHTML = '';
                         return;
                     }
 
                     tbody.innerHTML = pageData.map(item => {
-                        const dateStr = item.invoice_date || item.created_at;
+                        const dateStr = item.invoice_created_at || item.invoice_date || item.created_at;
                         const dt = new Date(dateStr);
-                        const timeString = isNaN(dt.getTime()) ? '—' : dt.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+                        const timeString = isNaN(dt.getTime())
+                            ? '—'
+                            : dt.toLocaleString('es-CO', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+                        const updatedStr = item.updated_at || null;
+                        const udt = updatedStr ? new Date(updatedStr) : null;
+                        const updatedTimeString = (!udt || isNaN(udt.getTime()))
+                            ? '—'
+                            : udt.toLocaleString('es-CO', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
                         return `
                         <tr>
                             <td>${item.product_name || '—'}</td>
                             <td>${item.quantity}</td>
                             <td>$${parseFloat(item.price_total).toFixed(2)}</td>
                             <td>${timeString}</td>
+                            <td>${updatedTimeString}</td>
                             <td>${item.invoice_number}</td>
                         </tr>
                     `;
@@ -1181,6 +505,8 @@
         let profitsData = [];
         let currentProductId = null;
         let invoiceItemCount = 0;
+        let editingInvoiceId = null;
+        let editInvoiceItemCount = 0;
         let currentInvoiceDetails = null;
 
         // Pagination variables
@@ -1431,7 +757,7 @@
             const invoices = invoicesToDisplay || allInvoices;
 
             if (invoices.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="empty-state"><h3>Facturas</h3><p>Comienza creando una nueva factura</p></div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center"><div class="empty-state"><h3>Facturas</h3><p>Comienza creando una nueva factura</p></div></td></tr>';
                 document.getElementById('invoicesPagination').innerHTML = '';
                 return;
             }
@@ -1443,13 +769,15 @@
             tbody.innerHTML = pageInvoices.map(invoice => `
                 <tr>
                     <td><strong>${invoice.invoice_number}</strong></td>
-                    <td>${new Date(invoice.invoice_date).toLocaleDateString('es-ES', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'})}</td>
+                    <td>${invoice.created_at ? new Date(invoice.created_at).toLocaleDateString('es-ES', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'}) : '—'}</td>
+                    <td>${invoice.updated_at ? new Date(invoice.updated_at).toLocaleDateString('es-ES', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'}) : '—'}</td>
                     <td><strong>$${parseFloat(invoice.total).toFixed(2)}</strong></td>
                     <td>${invoice.items ? invoice.items.length : 0}</td>
                     <td><span class="badge badge-success">${invoice.status}</span></td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn btn-info" onclick="viewInvoice(${invoice.id})">Ver</button>
+                            <button class="btn btn-secondary" onclick="openEditInvoiceModal(${invoice.id})">Editar</button>
                             <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Eliminar</button>
                         </div>
                     </td>
@@ -1541,6 +869,176 @@
         function closeInvoiceModal() {
             document.getElementById('invoiceModal').classList.remove('show');
         }
+
+        // Open Edit Invoice Modal
+        function openEditInvoiceModal(id) {
+            if (products.length === 0) {
+                showError('⚠️ Debe agregar productos primero');
+                return;
+            }
+
+            editingInvoiceId = id;
+            editInvoiceItemCount = 0;
+            const container = document.getElementById('invoiceEditItemsContainer');
+            container.innerHTML = '';
+            document.getElementById('invoiceEditTotal').textContent = '0.00';
+
+            fetch(`/api/invoices/${id}`)
+                .then(r => {
+                    if (!r.ok) throw new Error('No se pudo cargar la factura');
+                    return r.json();
+                })
+                .then(invoice => {
+                    const items = invoice.items || [];
+                    if (!items.length) {
+                        addEditInvoiceItem();
+                    } else {
+                        items.forEach(it => addEditInvoiceItem({ product_id: it.product_id, quantity: it.quantity, price: it.price }));
+                    }
+                    updateEditInvoiceTotal();
+                    document.getElementById('invoiceEditModal').classList.add('show');
+                })
+                .catch(err => showError('Error al cargar factura: ' + err.message));
+        }
+
+        // Close Edit Invoice Modal
+        function closeEditInvoiceModal() {
+            document.getElementById('invoiceEditModal').classList.remove('show');
+            editingInvoiceId = null;
+        }
+
+        // Add Edit Invoice Item
+        function addEditInvoiceItem(prefill = null) {
+            editInvoiceItemCount++;
+            const itemHtml = `
+                <div class="invoice-item-row invoice-edit-item-row" id="edit-item-${editInvoiceItemCount}">
+                    <select class="product-select edit-product-select" onchange="updateEditInvoiceTotal()">
+                        <option value="">Seleccionar producto...</option>
+                        ${products.map(p => `<option value="${p.id}" data-price="${p.price}" data-stock="${p.stock}">${p.name} (Stock: ${p.stock}) - $${p.price}</option>`).join('')}
+                    </select>
+                    <input type="number" class="quantity-input edit-quantity-input" value="1" min="1" onchange="updateEditInvoiceTotal()" placeholder="Cantidad">
+                    <input type="number" class="price-input edit-price-input" value="0" min="0" step="0.01" placeholder="Precio" onchange="updateEditInvoiceTotal()" readonly style="background: #f5f5f5;">
+                    <div class="text-right subtotal edit-subtotal">$0.00</div>
+                    <button type="button" class="btn btn-danger" onclick="removeEditInvoiceItem(${editInvoiceItemCount})">✕</button>
+                </div>
+            `;
+            document.getElementById('invoiceEditItemsContainer').insertAdjacentHTML('beforeend', itemHtml);
+
+            if (prefill) {
+                const row = document.getElementById(`edit-item-${editInvoiceItemCount}`);
+                const select = row.querySelector('.edit-product-select');
+                const qty = row.querySelector('.edit-quantity-input');
+                const priceInput = row.querySelector('.edit-price-input');
+
+                if (prefill.product_id) select.value = String(prefill.product_id);
+                if (prefill.quantity) qty.value = String(prefill.quantity);
+                if (prefill.price) priceInput.value = String(prefill.price);
+            }
+        }
+
+        // Update Edit Invoice Total
+        function updateEditInvoiceTotal() {
+            let total = 0;
+            document.querySelectorAll('.invoice-edit-item-row').forEach(row => {
+                const select = row.querySelector('.edit-product-select');
+                const quantity = parseFloat(row.querySelector('.edit-quantity-input').value) || 0;
+                const priceInput = row.querySelector('.edit-price-input');
+
+                let price = parseFloat(priceInput.value) || 0;
+                if (select.value) {
+                    const selectedOption = select.querySelector(`option[value="${select.value}"]`);
+                    const optionPrice = parseFloat(selectedOption?.dataset?.price) || 0;
+                    if (!price || price !== optionPrice) {
+                        price = optionPrice;
+                        priceInput.value = optionPrice;
+                    }
+                }
+
+                const subtotal = quantity * price;
+                row.querySelector('.edit-subtotal').textContent = '$' + subtotal.toFixed(2);
+                total += subtotal;
+            });
+            document.getElementById('invoiceEditTotal').textContent = total.toFixed(2);
+        }
+
+        // Remove Edit Invoice Item
+        function removeEditInvoiceItem(itemCount) {
+            const row = document.getElementById(`edit-item-${itemCount}`);
+            if (row) row.remove();
+            updateEditInvoiceTotal();
+        }
+
+        // Save Invoice Edits
+        document.getElementById('invoiceEditForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!editingInvoiceId) {
+                showError('No hay factura seleccionada para editar');
+                return;
+            }
+
+            const rows = Array.from(document.querySelectorAll('.invoice-edit-item-row'));
+            if (!rows.length) {
+                showError('Debe agregar al menos un producto');
+                return;
+            }
+
+            const items = [];
+            const used = new Set();
+            for (const row of rows) {
+                const productId = row.querySelector('.edit-product-select').value;
+                const quantity = parseInt(row.querySelector('.edit-quantity-input').value, 10);
+
+                if (!productId) {
+                    showError('Seleccione un producto en todos los items');
+                    return;
+                }
+                if (!quantity || quantity < 1) {
+                    showError('La cantidad debe ser mayor a 0');
+                    return;
+                }
+                if (used.has(productId)) {
+                    showError('No se permiten productos duplicados');
+                    return;
+                }
+                used.add(productId);
+
+                items.push({ product_id: parseInt(productId, 10), quantity });
+            }
+
+            fetch(`/api/invoices/${editingInvoiceId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ items })
+            })
+            .then(async response => {
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data.message || 'No se pudo actualizar la factura');
+                }
+                return data;
+            })
+            .then(data => {
+                showSuccess('✓ Factura actualizada correctamente');
+                closeEditInvoiceModal();
+                loadInvoices();
+                loadProducts();
+                if (typeof loadLowStockProducts === 'function') loadLowStockProducts();
+
+                const closeDateFilter = document.getElementById('closeDateFilter');
+                if (closeDateFilter && closeDateFilter.value) {
+                    loadDailyCloseDashboard();
+                }
+
+                if (currentInvoiceDetails && currentInvoiceDetails.id === editingInvoiceId) {
+                    viewInvoice(editingInvoiceId);
+                }
+            })
+            .catch(error => showError('Error: ' + error.message));
+        });
 
         // Add Invoice Item
         function addInvoiceItem() {
@@ -1673,7 +1171,7 @@
                     <div class="invoice-details-table" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                         <div>
                             <strong>Número:</strong> ${invoice.invoice_number}<br>
-                            <strong>Fecha:</strong> ${new Date(invoice.invoice_date).toLocaleDateString('es-ES', {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'})}
+                            <strong>Fecha:</strong> ${(invoice.created_at ? new Date(invoice.created_at) : new Date(invoice.invoice_date)).toLocaleDateString('es-ES', {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'})}
                         </div>
                         <div>
                             <strong>Estado:</strong> <span class="badge badge-success">${invoice.status}</span><br>
@@ -1717,77 +1215,47 @@
         // Print Invoice
         function printInvoice() {
             if (!currentInvoiceDetails) return;
-            
-            const printContent = `
-                <!DOCTYPE html>
-                <html lang="es">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Factura ${currentInvoiceDetails.invoice_number}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; margin: 20px; }
-                        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-                        h1 { margin: 0; }
-                        .invoice-details { margin-bottom: 20px; }
-                        .invoice-details p { margin: 5px 0; }
-                        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-                        th { background: #f5f5f5; font-weight: bold; }
-                        .total { font-weight: bold; font-size: 16px; text-align: right; padding-top: 20px; border-top: 2px solid #333; }
-                        .footer { text-align: center; margin-top: 30px; color: #999; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>FACTURA</h1>
-                        <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Micheladas la 66</p>
-                    </div>
-                    
-                    <div class="invoice-details">
-                        <p><strong>Factura:</strong> ${currentInvoiceDetails.invoice_number}</p>
-                        <p><strong>Fecha:</strong> ${new Date(currentInvoiceDetails.invoice_date).toLocaleDateString('es-ES', {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'})}</p>
-                        <p><strong>Estado:</strong> ${currentInvoiceDetails.status}</p>
-                    </div>
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Cantidad</th>
-                                <th>Precio Unit.</th>
-                                <th>Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${currentInvoiceDetails.items.map(item => `
-                                <tr>
-                                    <td>${item.product.name}</td>
-                                    <td>${item.quantity}</td>
-                                    <td>$${parseFloat(item.price).toFixed(2)}</td>
-                                    <td>$${parseFloat(item.subtotal).toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+            if (!currentInvoiceDetails.id) {
+                showError('No se encontró el ID de la factura para imprimir.');
+                return;
+            }
 
-                    <div class="total">
-                        <div>TOTAL: $${parseFloat(currentInvoiceDetails.total).toFixed(2)}</div>
-                    </div>
+            const pdfUrl = `/invoices/${currentInvoiceDetails.id}/ticket?paper=a6&_=${Date.now()}`;
 
-                    ${currentInvoiceDetails.notes ? `<p><strong>Notas:</strong> ${currentInvoiceDetails.notes}</p>` : ''}
+            // Print without opening a new tab/window: load the PDF in a hidden iframe and call print().
+            const iframe = document.createElement('iframe');
+            iframe.setAttribute('aria-hidden', 'true');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            iframe.src = pdfUrl;
 
-                    <div class="footer">
-                        <p>Gracias por su compra</p>
-                        <p style="font-size: 12px;">Impreso el ${new Date().toLocaleDateString('es-ES')}</p>
-                    </div>
-                </body>
-                </html>
-            `;
+            const cleanup = () => {
+                try { iframe.remove(); } catch (e) { /* ignore */ }
+                window.removeEventListener('afterprint', cleanup);
+            };
 
-            const printWindow = window.open('', '', 'width=800,height=600');
-            printWindow.document.write(printContent);
-            printWindow.document.close();
-            printWindow.print();
+            window.addEventListener('afterprint', cleanup);
+            document.body.appendChild(iframe);
+
+            iframe.onload = () => {
+                setTimeout(() => {
+                    try {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                    } catch (e) {
+                        // Fallback: if the browser blocks printing from iframe, open in same tab.
+                        window.location.href = pdfUrl;
+                    }
+                }, 200);
+            };
+
+            // Fallback cleanup in case afterprint doesn't fire.
+            setTimeout(cleanup, 60_000);
         }
 
         // Delete Invoice
