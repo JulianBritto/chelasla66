@@ -280,6 +280,43 @@ input:focus, textarea:focus, select:focus {
     margin: auto;
 }
 
+/* Confirm modal (delete) */
+.confirm-modal-content {
+    max-width: 520px;
+    border-top: 6px solid #ff6b6b;
+}
+
+.confirm-modal-header {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 10px;
+}
+
+.confirm-modal-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    background: rgba(255, 107, 107, 0.15);
+    color: #ee5a52;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
+}
+
+.confirm-modal-subtext {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 0;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
 .modal-content-large {
     max-width: 700px;
 }

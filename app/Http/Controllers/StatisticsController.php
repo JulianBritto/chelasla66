@@ -20,11 +20,10 @@ class StatisticsController extends Controller
             ->select([
                 'p.id as product_id',
                 'p.name as product_name',
-                'p.description as product_description',
                 DB::raw('SUM(sp.quantity) as total_quantity'),
                 DB::raw('SUM(sp.price_total) as total_sales'),
             ])
-            ->groupBy('p.id', 'p.name', 'p.description')
+            ->groupBy('p.id', 'p.name')
             ->orderByDesc('total_quantity')
             ->orderByDesc('total_sales')
             ->limit($limit)
@@ -34,7 +33,6 @@ class StatisticsController extends Controller
             return [
                 'product_id' => (int) $r->product_id,
                 'product_name' => $r->product_name,
-                'product_description' => $r->product_description,
                 'total_quantity' => (int) $r->total_quantity,
                 'total_sales' => (float) $r->total_sales,
             ];

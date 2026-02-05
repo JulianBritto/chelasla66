@@ -285,14 +285,13 @@
                             <thead>
                                 <tr>
                                     <th>Producto</th>
-                                    <th>Descripción</th>
                                     <th>Cantidad</th>
                                     <th>Total vendido</th>
                                 </tr>
                             </thead>
                             <tbody id="topProductsTable">
                                 <tr>
-                                    <td colspan="4" class="text-center">Cargando...</td>
+                                    <td colspan="3" class="text-center">Cargando...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -356,6 +355,48 @@
                     <button type="button" class="btn btn-secondary" onclick="closeProductModal()" style="flex: 1;">Cancelar</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Product Modal -->
+    <div id="confirmDeleteProductModal" class="modal">
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-header confirm-modal-header">
+                <div class="confirm-modal-icon" aria-hidden="true">!</div>
+                <button class="close-btn" onclick="closeConfirmDeleteProductModal()">&times;</button>
+            </div>
+            <div class="confirm-modal-body">
+                <h2 style="margin-bottom: 10px;">Eliminar producto</h2>
+                <p style="margin-bottom: 8px; color: #333;">
+                    ¿Seguro que deseas eliminar <strong id="confirmDeleteProductName">este producto</strong>?
+                </p>
+                <p class="confirm-modal-subtext">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="confirm-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmDeleteProductModal()" style="flex: 1;">Cancelar</button>
+                <button type="button" id="confirmDeleteProductBtn" class="btn btn-danger" onclick="confirmDeleteProduct()" style="flex: 1;">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Invoice Modal -->
+    <div id="confirmDeleteInvoiceModal" class="modal">
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-header confirm-modal-header">
+                <div class="confirm-modal-icon" aria-hidden="true">!</div>
+                <button class="close-btn" onclick="closeConfirmDeleteInvoiceModal()">&times;</button>
+            </div>
+            <div class="confirm-modal-body">
+                <h2 style="margin-bottom: 10px;">Eliminar factura</h2>
+                <p style="margin-bottom: 8px; color: #333;">
+                    ¿Seguro que deseas eliminar <strong id="confirmDeleteInvoiceNumber">esta factura</strong>?
+                </p>
+                <p class="confirm-modal-subtext">Esto restaurará el stock de los productos. Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="confirm-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmDeleteInvoiceModal()" style="flex: 1;">Cancelar</button>
+                <button type="button" id="confirmDeleteInvoiceBtn" class="btn btn-danger" onclick="confirmDeleteInvoice()" style="flex: 1;">Eliminar</button>
+            </div>
         </div>
     </div>
 
@@ -570,6 +611,9 @@
         const itemsPerPageLowStock = 5;
         const itemsPerPageProfits = 7;
 
+        let pendingDeleteProductId = null;
+        let pendingDeleteInvoiceId = null;
+
         // Tab Switching
         // ...la versión correcta de switchTab ya está definida más abajo...
 
@@ -603,7 +647,7 @@
                 <tr>
                     <td><strong>${product.name}</strong></td>
                     <td>$${parseFloat(product.price).toFixed(2)}</td>
-                    <td>${product.stock < 10 ? `<span class="badge badge-warning">${product.stock}</span>` : product.stock}</td>
+                    <td>${Number(product.stock) <= 5 ? `<span class="badge badge-warning">${product.stock}</span>` : product.stock}</td>
                     <td>${product.description || '-'}</td>
                     <td>
                         <div class="action-buttons">
@@ -687,7 +731,7 @@
                 <tr>
                     <td><strong>${product.name}</strong></td>
                     <td>$${parseFloat(product.price).toFixed(2)}</td>
-                    <td>${product.stock < 10 ? `<span class="badge badge-warning">${product.stock}</span>` : product.stock}</td>
+                    <td>${Number(product.stock) <= 5 ? `<span class="badge badge-warning">${product.stock}</span>` : product.stock}</td>
                     <td>${product.description || '-'}</td>
                     <td>
                         <div class="action-buttons">
@@ -773,20 +817,65 @@
 
         // Delete Product
         function deleteProduct(id) {
-            if (!confirm('¿Está seguro de que desea eliminar este producto?')) return;
+            openConfirmDeleteProductModal(id);
+        }
 
-            fetch(`/api/products/${id}`, {
+        function openConfirmDeleteProductModal(id) {
+            pendingDeleteProductId = id;
+
+            const modal = document.getElementById('confirmDeleteProductModal');
+            const nameEl = document.getElementById('confirmDeleteProductName');
+            const btn = document.getElementById('confirmDeleteProductBtn');
+
+            const product = Array.isArray(products) ? products.find(p => p.id === id) : null;
+            nameEl.textContent = product?.name ? `"${product.name}"` : 'este producto';
+
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Eliminar';
+            }
+
+            modal.classList.add('show');
+        }
+
+        function closeConfirmDeleteProductModal() {
+            const modal = document.getElementById('confirmDeleteProductModal');
+            modal.classList.remove('show');
+            pendingDeleteProductId = null;
+        }
+
+        function confirmDeleteProduct() {
+            if (!pendingDeleteProductId) return;
+
+            const btn = document.getElementById('confirmDeleteProductBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Eliminando...';
+            }
+
+            fetch(`/api/products/${pendingDeleteProductId}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                showSuccess('✓ Producto eliminado correctamente');
-                loadProducts();
-            })
-            .catch(error => showError('Error: ' + error));
+                .then(response => {
+                    if (!response.ok) throw new Error('No se pudo eliminar el producto');
+                    return response.json();
+                })
+                .then(() => {
+                    showDanger('✓ Producto eliminado correctamente');
+                    closeConfirmDeleteProductModal();
+                    loadProducts();
+                    loadLowStockProducts();
+                })
+                .catch(error => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = 'Eliminar';
+                    }
+                    showError('Error: ' + error.message);
+                });
         }
 
         // Load Invoices
@@ -1310,35 +1399,96 @@
 
         // Delete Invoice
         function deleteInvoice(id) {
-            if (!confirm('¿Está seguro de que desea eliminar esta factura? Esto restaurará el stock de los productos.')) return;
+            openConfirmDeleteInvoiceModal(id);
+        }
 
-            fetch(`/api/invoices/${id}`, {
+        function openConfirmDeleteInvoiceModal(id) {
+            pendingDeleteInvoiceId = id;
+
+            const modal = document.getElementById('confirmDeleteInvoiceModal');
+            const numberEl = document.getElementById('confirmDeleteInvoiceNumber');
+            const btn = document.getElementById('confirmDeleteInvoiceBtn');
+
+            const invoice = Array.isArray(allInvoices) ? allInvoices.find(inv => inv.id === id) : null;
+            numberEl.textContent = invoice?.invoice_number ? `la factura "${invoice.invoice_number}"` : 'esta factura';
+
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Eliminar';
+            }
+
+            modal.classList.add('show');
+        }
+
+        function closeConfirmDeleteInvoiceModal() {
+            const modal = document.getElementById('confirmDeleteInvoiceModal');
+            modal.classList.remove('show');
+            pendingDeleteInvoiceId = null;
+        }
+
+        function confirmDeleteInvoice() {
+            if (!pendingDeleteInvoiceId) return;
+
+            const btn = document.getElementById('confirmDeleteInvoiceBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Eliminando...';
+            }
+
+            fetch(`/api/invoices/${pendingDeleteInvoiceId}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                showSuccess('✓ Factura eliminada correctamente y stock restaurado');
-                loadInvoices();
-                loadProducts(); // Actualizar stock
-                loadLowStockProducts();
-            })
-            .catch(error => showError('Error: ' + error));
+                .then(response => {
+                    if (!response.ok) throw new Error('No se pudo eliminar la factura');
+                    return response.json();
+                })
+                .then(() => {
+                    showDanger('✓ Factura eliminada correctamente y stock restaurado');
+                    closeConfirmDeleteInvoiceModal();
+                    loadInvoices();
+                    loadProducts();
+                    loadLowStockProducts();
+                })
+                .catch(error => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = 'Eliminar';
+                    }
+                    showError('Error: ' + error.message);
+                });
         }
 
         // Show Success Message
         function showSuccess(message) {
             const alert = document.getElementById('successAlert');
+            const errorAlert = document.getElementById('errorAlert');
+
+            errorAlert.classList.remove('show');
             alert.textContent = message;
             alert.classList.add('show');
             setTimeout(() => alert.classList.remove('show'), 3000);
         }
 
+        // Show Danger Message (for deletes)
+        function showDanger(message) {
+            const alert = document.getElementById('errorAlert');
+            const successAlert = document.getElementById('successAlert');
+
+            successAlert.classList.remove('show');
+            alert.textContent = message;
+            alert.classList.add('show');
+            setTimeout(() => alert.classList.remove('show'), 3500);
+        }
+
         // Show Error Message
         function showError(message) {
             const alert = document.getElementById('errorAlert');
+            const successAlert = document.getElementById('successAlert');
+
+            successAlert.classList.remove('show');
             alert.textContent = message;
             alert.classList.add('show');
             setTimeout(() => alert.classList.remove('show'), 4000);
@@ -1349,6 +1499,8 @@
             const productModal = document.getElementById('productModal');
             const invoiceModal = document.getElementById('invoiceModal');
             const detailsModal = document.getElementById('invoiceDetailsModal');
+            const confirmDeleteProductModal = document.getElementById('confirmDeleteProductModal');
+            const confirmDeleteInvoiceModal = document.getElementById('confirmDeleteInvoiceModal');
             
             if (event.target === productModal) {
                 productModal.classList.remove('show');
@@ -1358,6 +1510,12 @@
             }
             if (event.target === detailsModal) {
                 detailsModal.classList.remove('show');
+            }
+            if (event.target === confirmDeleteProductModal) {
+                closeConfirmDeleteProductModal();
+            }
+            if (event.target === confirmDeleteInvoiceModal) {
+                closeConfirmDeleteInvoiceModal();
             }
         }
 
@@ -1406,7 +1564,7 @@
             const tbody = document.getElementById('topProductsTable');
             if (!tbody) return;
 
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Cargando...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center">Cargando...</td></tr>';
 
             fetch('/api/statistics/top-products?limit=5')
                 .then(r => {
@@ -1415,16 +1573,14 @@
                 })
                 .then(rows => {
                     if (!rows || rows.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Aún no hay ventas registradas</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Aún no hay ventas registradas</td></tr>';
                         return;
                     }
 
                     tbody.innerHTML = rows.map(row => {
-                        const desc = row.product_description || '-';
                         return `
                             <tr>
                                 <td><strong>${row.product_name}</strong></td>
-                                <td>${desc}</td>
                                 <td>${row.total_quantity}</td>
                                 <td><strong>$${parseFloat(row.total_sales).toFixed(2)}</strong></td>
                             </tr>
@@ -1432,7 +1588,7 @@
                     }).join('');
                 })
                 .catch(err => {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Error al cargar</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center">Error al cargar</td></tr>';
                     showError('Error al cargar estadísticas: ' + err.message);
                 });
         }
