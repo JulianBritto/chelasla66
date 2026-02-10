@@ -11,6 +11,7 @@ class SoldProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $date = $request->query('date');
+        $limit = (int) $request->query('limit');
 
         $query = SoldProduct::with(['product', 'invoice']);
 
@@ -23,7 +24,14 @@ class SoldProductController extends Controller
             });
         }
 
-        $sold = $query->orderBy('invoice_date', 'desc')->orderBy('created_at', 'desc')->get();
+        $query->orderBy('invoice_date', 'desc')->orderBy('created_at', 'desc');
+
+        if ($limit > 0) {
+            $limit = min($limit, 100);
+            $query->limit($limit);
+        }
+
+        $sold = $query->get();
 
         // Map to a simple structure
         $result = $sold->map(function ($s) {

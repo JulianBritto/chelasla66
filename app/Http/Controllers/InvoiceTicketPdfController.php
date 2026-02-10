@@ -13,7 +13,10 @@ class InvoiceTicketPdfController extends Controller
     {
         $invoice->load('items.product');
 
-        $pdf = Pdf::loadView('invoices.ticket-pdf', [
+        $type = strtolower((string) $request->query('type', 'normal'));
+        $view = $type === 'dian' ? 'invoices.ticket-dian-pdf' : 'invoices.ticket-pdf';
+
+        $pdf = Pdf::loadView($view, [
             'invoice' => $invoice,
         ]);
 
@@ -27,6 +30,13 @@ class InvoiceTicketPdfController extends Controller
             $pdf->setPaper('a6', 'portrait');
         }
 
-        return $pdf->stream('ticket-' . $invoice->invoice_number . '.pdf');
+        $filenameBase = $type === 'dian' ? 'factura-dian-' : 'factura-';
+        $filename = $filenameBase . $invoice->invoice_number . '.pdf';
+
+        if ((string) $request->query('download', '') === '1') {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 }

@@ -117,23 +117,28 @@
                 </div>
 
                 <div style="display: flex; gap: 20px; margin-top: 20px;">
-                    <!-- Productos con Bajo Stock -->
+                    <!-- Últimos 18 productos vendidos -->
                     <div style="flex: 1;">
-                        <h3>Productos con Bajo Stock</h3>
+                        <h3>Últimos 18 productos vendidos</h3>
                         <div class="table-container">
                             <table>
                                 <thead>
                                     <tr>
                                         <th>Producto</th>
-                                        <th>Stock</th>
+                                        <th>Cant.</th>
+                                        <th>Total</th>
+                                        <th>Hora</th>
                                     </tr>
                                 </thead>
-                                <tbody id="lowStockTable">
+                                <tbody id="latestSoldProductsTable">
+                                    <tr>
+                                        <td colspan="4" class="text-center">Cargando...</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                         <div class="low-stock-pagination-container">
-                            <div id="lowStockPagination" class="pagination"></div>
+                            <div id="latestSoldPagination" class="pagination"></div>
                         </div>
                     </div>
 
@@ -170,6 +175,24 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h3>Productos con Bajo Stock</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lowStockTable"></tbody>
+                        </table>
+                    </div>
+                    <div class="low-stock-pagination-container">
+                        <div id="lowStockPagination" class="pagination"></div>
                     </div>
                 </div>
             </div>
@@ -278,44 +301,46 @@
                     <h2>📈 Estadísticas</h2>
                 </div>
 
-                <div style="margin-top: 10px;">
-                    <h3 style="margin-bottom: 15px;">🏆 Top 5 productos más vendidos</h3>
-                    <div class="table-container">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Producto</th>
-                                    <th>Cantidad</th>
-                                    <th>Total vendido</th>
-                                </tr>
-                            </thead>
-                            <tbody id="topProductsTable">
-                                <tr>
-                                    <td colspan="3" class="text-center">Cargando...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div style="display: flex; gap: 20px; margin-top: 10px; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h3 style="margin-bottom: 15px;">🏆 Top 5 productos más vendidos</h3>
+                        <div class="table-container">
+                            <table class="stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Total vendido</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topProductsTable">
+                                    <tr>
+                                        <td colspan="3" class="text-center">Cargando...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
 
-                <div style="margin-top: 30px;">
-                    <h3 style="margin-bottom: 15px;">📅 Top 4 días con más productos vendidos</h3>
-                    <div class="table-container">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Fecha (Año-Mes-Día)</th>
-                                    <th>Productos vendidos</th>
-                                    <th>Top 3 productos</th>
-                                    <th>Total vendido</th>
-                                </tr>
-                            </thead>
-                            <tbody id="topDaysTable">
-                                <tr>
-                                    <td colspan="4" class="text-center">Cargando...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div style="flex: 1;">
+                        <h3 style="margin-bottom: 15px;">📅 Top 4 días con más productos vendidos</h3>
+                        <div class="table-container">
+                            <table class="stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha (Año-Mes-Día)</th>
+                                        <th>Productos vendidos</th>
+                                        <th>Top 3 productos</th>
+                                        <th>Total vendido</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topDaysTable">
+                                    <tr>
+                                        <td colspan="4" class="text-center">Cargando...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -503,7 +528,8 @@
                 <!-- Contenido dinámico -->
             </div>
             <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button onclick="printInvoice()" class="btn btn-secondary" style="flex: 1;">Imprimir</button>
+                <button onclick="downloadInvoice('normal')" class="btn btn-secondary" style="flex: 1;">Descargar factura normal</button>
+                <button onclick="downloadInvoice('dian')" class="btn btn-secondary" style="flex: 1;">Descargar factura DIAN</button>
                 <button type="button" class="btn btn-secondary" onclick="closeInvoiceDetailsModal()" style="flex: 1;">Cerrar</button>
             </div>
         </div>
@@ -593,6 +619,7 @@
         let products = [];
         let allInvoices = [];
         let lowStockProducts = [];
+        let latestSoldProducts = [];
         let profitsData = [];
         let currentProductId = null;
         let invoiceItemCount = 0;
@@ -604,11 +631,13 @@
         let productsCurrentPage = 1;
         let invoicesCurrentPage = 1;
         let lowStockCurrentPage = 1;
+        let latestSoldCurrentPage = 1;
         let profitsCurrentPage = 1;
         const itemsPerPage = 4;
         const itemsPerPageProducts = 7;
         const itemsPerPageInvoices = 6;
         const itemsPerPageLowStock = 5;
+        const itemsPerPageLatestSold = 6;
         const itemsPerPageProfits = 7;
 
         let pendingDeleteProductId = null;
@@ -1166,6 +1195,7 @@
                 loadInvoices();
                 loadProducts();
                 if (typeof loadLowStockProducts === 'function') loadLowStockProducts();
+                if (typeof loadLatestSoldProducts === 'function') loadLatestSoldProducts();
 
                 const closeDateFilter = document.getElementById('closeDateFilter');
                 if (closeDateFilter && closeDateFilter.value) {
@@ -1277,6 +1307,7 @@
                 loadInvoices();
                 loadProducts(); // Actualizar stock
                 loadLowStockProducts();
+                loadLatestSoldProducts();
             })
             .catch(error => showError('Error: ' + error.message));
         });
@@ -1351,18 +1382,18 @@
             document.getElementById('invoiceDetailsModal').classList.remove('show');
         }
 
-        // Print Invoice
-        function printInvoice() {
+        // Descargar = abrir diálogo de impresión (sin pop-ups ni modales)
+        function downloadInvoice(type = 'normal') {
             if (!currentInvoiceDetails) return;
 
             if (!currentInvoiceDetails.id) {
-                showError('No se encontró el ID de la factura para imprimir.');
+                showError('No se encontró el ID de la factura.');
                 return;
             }
 
-            const pdfUrl = `/invoices/${currentInvoiceDetails.id}/ticket?paper=a6&_=${Date.now()}`;
+            const safeType = (type === 'dian' || type === 'normal') ? type : 'normal';
+            const pdfUrl = `/invoices/${currentInvoiceDetails.id}/ticket?type=${encodeURIComponent(safeType)}&paper=a6&_=${Date.now()}`;
 
-            // Print without opening a new tab/window: load the PDF in a hidden iframe and call print().
             const iframe = document.createElement('iframe');
             iframe.setAttribute('aria-hidden', 'true');
             iframe.style.position = 'fixed';
@@ -1375,10 +1406,8 @@
 
             const cleanup = () => {
                 try { iframe.remove(); } catch (e) { /* ignore */ }
-                window.removeEventListener('afterprint', cleanup);
             };
 
-            window.addEventListener('afterprint', cleanup);
             document.body.appendChild(iframe);
 
             iframe.onload = () => {
@@ -1387,13 +1416,15 @@
                         iframe.contentWindow.focus();
                         iframe.contentWindow.print();
                     } catch (e) {
-                        // Fallback: if the browser blocks printing from iframe, open in same tab.
+                        // Fallback: open the PDF in the same tab if printing is blocked.
                         window.location.href = pdfUrl;
+                    } finally {
+                        setTimeout(cleanup, 5_000);
                     }
                 }, 200);
             };
 
-            // Fallback cleanup in case afterprint doesn't fire.
+            // Safety cleanup
             setTimeout(cleanup, 60_000);
         }
 
@@ -1451,6 +1482,7 @@
                     loadInvoices();
                     loadProducts();
                     loadLowStockProducts();
+                    loadLatestSoldProducts();
                 })
                 .catch(error => {
                     if (btn) {
@@ -1643,6 +1675,78 @@
                 .catch(error => showError('Error al cargar productos con bajo stock: ' + error));
         }
 
+        // Load Latest Sold Products (Last 18)
+        function loadLatestSoldProducts() {
+            const tbody = document.getElementById('latestSoldProductsTable');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Cargando...</td></tr>';
+
+            fetch('/api/sold-products?limit=18')
+                .then(async r => {
+                    if (!r.ok) throw new Error('No se pudo cargar los productos vendidos');
+                    return r.json();
+                })
+                .then(rows => {
+                    latestSoldProducts = Array.isArray(rows) ? rows : [];
+                    latestSoldCurrentPage = 1;
+                    displayLatestSoldPage(1);
+                })
+                .catch(err => {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Error al cargar</td></tr>';
+                    showError('Error al cargar últimos productos vendidos: ' + err.message);
+                });
+        }
+
+        function displayLatestSoldPage(page) {
+            const tbody = document.getElementById('latestSoldProductsTable');
+            const paginationContainer = document.getElementById('latestSoldPagination');
+            if (!tbody || !paginationContainer) return;
+
+            if (!Array.isArray(latestSoldProducts) || latestSoldProducts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Aún no hay ventas registradas</td></tr>';
+                paginationContainer.innerHTML = '';
+                return;
+            }
+
+            const start = (page - 1) * itemsPerPageLatestSold;
+            const end = start + itemsPerPageLatestSold;
+            const pageData = latestSoldProducts.slice(start, end);
+
+            tbody.innerHTML = pageData.map(row => {
+                const name = row.product_name || '—';
+                const qty = row.quantity ?? '—';
+                const total = Number.isFinite(Number(row.price_total)) ? `$${parseFloat(row.price_total).toFixed(2)}` : '—';
+
+                const dateStr = row.invoice_created_at || row.invoice_date || row.created_at;
+                const dt = dateStr ? new Date(dateStr) : null;
+                const timeString = (!dt || isNaN(dt.getTime()))
+                    ? '—'
+                    : dt.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+
+                return `
+                    <tr>
+                        <td>${name}</td>
+                        <td>${qty}</td>
+                        <td>${total}</td>
+                        <td>${timeString}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const totalPages = Math.ceil(latestSoldProducts.length / itemsPerPageLatestSold);
+            latestSoldCurrentPage = page;
+            paginationContainer.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'pagination-btn ' + (i === page ? 'active' : '');
+                btn.textContent = i;
+                btn.onclick = () => displayLatestSoldPage(i);
+                paginationContainer.appendChild(btn);
+            }
+        }
+
         // Display Low Stock Products Page
         function displayLowStockPage(page) {
             const tbody = document.getElementById('lowStockTable');
@@ -1826,6 +1930,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadProducts();
             loadLowStockProducts();
+            loadLatestSoldProducts();
         });
     </script>
 </body>
