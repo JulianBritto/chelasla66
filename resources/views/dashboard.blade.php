@@ -3,14 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Micheladas la 66 - Inventario y Facturación</title>
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 </head>
 <body>
+    @php
+        $authUser = auth()->user();
+        $isAdmin = (int) ($authUser->role ?? 2) === 1;
+    @endphp
     <div class="container">
         <!-- Header -->
         <div class="header">
             <h1>🍺 Inventario y sistema de facturación Micheladas la 66</h1>
+            <div style="margin-top: 10px; display:flex; justify-content: flex-end;">
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="btn btn-secondary">Salir</button>
+                </form>
+            </div>
         </div>
 
         <!-- Alert Messages -->
@@ -23,14 +34,19 @@
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="switchTab('dashboard', this)">🏠 Principal</button>
             <button class="nav-tab" onclick="switchTab('inventory', this)">📊 Inventario</button>
-            <button class="nav-tab" onclick="switchTab('profits', this)">💰 Ganancias</button>
+            @if($isAdmin)
+                <button class="nav-tab" onclick="switchTab('profits', this)">💰 Ganancias</button>
+            @endif
             <button class="nav-tab" onclick="switchTab('invoices', this)">🧾 Facturas</button>
-            <button class="nav-tab" onclick="switchTab('daily-close', this)">🔒 Cierre del Día</button>
-            <button class="nav-tab" onclick="switchTab('statistics', this)">📈 Estadísticas</button>
+            @if($isAdmin)
+                <button class="nav-tab" onclick="switchTab('daily-close', this)">🔒 Cierre del Día</button>
+                <button class="nav-tab" onclick="switchTab('statistics', this)">📈 Estadísticas</button>
+            @endif
         </div>
 
         <!-- Content -->
         <div class="content">
+                        @if($isAdmin)
                         <!-- Daily Close Section -->
                         <div id="daily-close" class="section">
                             <div class="section-header">
@@ -91,6 +107,7 @@
                                 <div class="pagination-container" id="dailyProductsPagination"></div>
                             </div>
                         </div>
+                        @endif
             <!-- Dashboard Section -->
             <div id="dashboard" class="section active">
                 <div class="section-header">
@@ -201,7 +218,9 @@
             <div id="inventory" class="section">
                 <div class="section-header">
                     <h2>Gestión de Inventario</h2>
-                    <button class="btn btn-primary" onclick="openAddProductModal()">+ Agregar Producto</button>
+                    @if($isAdmin)
+                        <button class="btn btn-primary" onclick="openAddProductModal()">+ Agregar Producto</button>
+                    @endif
                 </div>
 
                 <div class="search-bar">
@@ -216,12 +235,14 @@
                                 <th>Precio</th>
                                 <th>Stock</th>
                                 <th>Descripción</th>
-                                <th>Acciones</th>
+                                @if($isAdmin)
+                                    <th>Acciones</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody id="productsTable">
                             <tr>
-                                <td colspan="5" class="text-center">Cargando productos...</td>
+                                <td colspan="{{ $isAdmin ? 5 : 4 }}" class="text-center">Cargando productos...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -264,6 +285,7 @@
             </div>
 
             <!-- Profits Section -->
+            @if($isAdmin)
             <div id="profits" class="section">
                 <div class="section-header">
                     <h2>💰 Gestión de Ganancias</h2>
@@ -294,8 +316,10 @@
                 </div>
                 <div class="pagination-container" id="profitsPagination"></div>
             </div>
+            @endif
 
             <!-- Statistics Section (placeholder) -->
+            @if($isAdmin)
             <div id="statistics" class="section">
                 <div class="section-header">
                     <h2>📈 Estadísticas</h2>
@@ -344,6 +368,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
         </div>
 
@@ -536,6 +561,7 @@
     </div>
 
     <script>
+        const IS_ADMIN = @json($isAdmin);
                 // Daily Close Dashboard Functions
                 let dailyCloseData = [];
                 let dailyCloseCurrentPage = 1;
@@ -663,7 +689,7 @@
             const tbody = document.getElementById('productsTable');
             
             if (products.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center"><div class="empty-state"><h3>Productos</h3><p>Comienza agregando un nuevo producto</p></div></td></tr>';
+                tbody.innerHTML = `<tr><td colspan="${IS_ADMIN ? 5 : 4}" class="text-center"><div class="empty-state"><h3>Productos</h3><p>Comienza agregando un nuevo producto</p></div></td></tr>`;
                 document.getElementById('productsPagination').innerHTML = '';
                 return;
             }
@@ -672,20 +698,28 @@
             const end = start + itemsPerPageProducts;
             const pageProducts = products.slice(start, end);
 
-            tbody.innerHTML = pageProducts.map(product => `
-                <tr>
-                    <td><strong>${product.name}</strong></td>
-                    <td>$${parseFloat(product.price).toFixed(2)}</td>
-                    <td>${Number(product.stock) <= 5 ? `<span class="badge badge-warning">${product.stock}</span>` : product.stock}</td>
-                    <td>${product.description || '-'}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-secondary" onclick="editProduct(${product.id})">Editar</button>
-                            <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Eliminar</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = pageProducts.map(product => {
+                const actionsCell = IS_ADMIN
+                    ? `
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-secondary" onclick="editProduct(${product.id})">Editar</button>
+                                <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Eliminar</button>
+                            </div>
+                        </td>
+                    `
+                    : '';
+
+                return `
+                    <tr>
+                        <td><strong>${product.name}</strong></td>
+                        <td>$${parseFloat(product.price).toFixed(2)}</td>
+                        <td>${Number(product.stock) <= 5 ? `<span class="badge badge-warning">${product.stock}</span>` : product.stock}</td>
+                        <td>${product.description || '-'}</td>
+                        ${actionsCell}
+                    </tr>
+                `;
+            }).join('');
 
             // Generar paginación
             generateProductsPagination();
@@ -752,24 +786,32 @@
             );
             const tbody = document.getElementById('productsTable');
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No se encontraron productos</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="${IS_ADMIN ? 5 : 4}" class="text-center">No se encontraron productos</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = filtered.map(product => `
-                <tr>
-                    <td><strong>${product.name}</strong></td>
-                    <td>$${parseFloat(product.price).toFixed(2)}</td>
-                    <td>${Number(product.stock) <= 5 ? `<span class="badge badge-warning">${product.stock}</span>` : product.stock}</td>
-                    <td>${product.description || '-'}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-secondary" onclick="editProduct(${product.id})">Editar</button>
-                            <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Eliminar</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = filtered.map(product => {
+                const actionsCell = IS_ADMIN
+                    ? `
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-secondary" onclick="editProduct(${product.id})">Editar</button>
+                                <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Eliminar</button>
+                            </div>
+                        </td>
+                    `
+                    : '';
+
+                return `
+                    <tr>
+                        <td><strong>${product.name}</strong></td>
+                        <td>$${parseFloat(product.price).toFixed(2)}</td>
+                        <td>${Number(product.stock) <= 5 ? `<span class="badge badge-warning">${product.stock}</span>` : product.stock}</td>
+                        <td>${product.description || '-'}</td>
+                        ${actionsCell}
+                    </tr>
+                `;
+            }).join('');
         }
 
         // Open Add Product Modal
@@ -945,8 +987,10 @@
                     <td>
                         <div class="action-buttons">
                             <button class="btn btn-info" onclick="viewInvoice(${invoice.id})">Ver</button>
-                            <button class="btn btn-secondary" onclick="openEditInvoiceModal(${invoice.id})">Editar</button>
-                            <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Eliminar</button>
+                            ${IS_ADMIN ? `
+                                <button class="btn btn-secondary" onclick="openEditInvoiceModal(${invoice.id})">Editar</button>
+                                <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Eliminar</button>
+                            ` : ''}
                         </div>
                     </td>
                 </tr>
