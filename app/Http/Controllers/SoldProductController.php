@@ -13,7 +13,7 @@ class SoldProductController extends Controller
         $date = $request->query('date');
         $limit = (int) $request->query('limit');
 
-        $query = SoldProduct::with(['product', 'invoice']);
+        $query = SoldProduct::with(['product.cost', 'invoice']);
 
         if ($date) {
             $query->where(function ($q) use ($date) {
@@ -35,6 +35,14 @@ class SoldProductController extends Controller
 
         // Map to a simple structure
         $result = $sold->map(function ($s) {
+            $purchasePrice = $s->product && $s->product->cost
+                ? (float) $s->product->cost->purchase_price
+                : 0.0;
+
+            $quantity = (int) ($s->quantity ?? 0);
+            $priceTotal = (float) $s->price_total;
+            $costTotal = $purchasePrice * $quantity;
+
             return [
                 'id' => $s->id,
                 'invoice_id' => $s->invoice_id,
@@ -44,6 +52,9 @@ class SoldProductController extends Controller
                 'product_name' => $s->product ? $s->product->name : null,
                 'quantity' => $s->quantity,
                 'price_total' => (float) $s->price_total,
+                'purchase_price' => $purchasePrice,
+                'cost_total' => $costTotal,
+                'profit_total' => $priceTotal - $costTotal,
                 'invoice_date' => $s->invoice_date ?? $s->created_at,
                 'created_at' => $s->created_at,
                 'updated_at' => $s->updated_at,

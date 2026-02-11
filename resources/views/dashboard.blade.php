@@ -81,6 +81,14 @@
                                         <div class="summary-value" id="dailyTotalSales" style="font-size: 36px; text-align: center;">$0</div>
                                     </div>
                                 </div>
+                                <div class="stat-summary-card">
+                                    <div class="summary-header">
+                                        <h3>📈 Total de Ganancias</h3>
+                                    </div>
+                                    <div class="summary-content">
+                                        <div class="summary-value" id="dailyTotalProfit" style="font-size: 36px; text-align: center;">$0</div>
+                                    </div>
+                                </div>
                             </div>
                             <!-- Products Summary Table -->
                             <div style="margin-top: 30px;">
@@ -594,6 +602,12 @@
                             document.getElementById('dailyInvoiceCount').textContent = invoicesSet.size;
                             const totalSales = data.reduce((s, d) => s + parseFloat(d.price_total || 0), 0);
                             document.getElementById('dailyTotalSales').textContent = '$' + totalSales.toFixed(2);
+
+                            const totalProfit = data.reduce((s, d) => s + parseFloat(d.profit_total ?? 0), 0);
+                            const totalProfitEl = document.getElementById('dailyTotalProfit');
+                            if (totalProfitEl) {
+                                totalProfitEl.textContent = '$' + totalProfit.toFixed(2);
+                            }
                             dailyCloseCurrentPage = 1;
                             displayDailyClosePage();
                         })
