@@ -9,6 +9,131 @@ body {
     background-color: #f5f5f5;
 }
 
+/* Login */
+.login-page {
+    background: #f5f5f5;
+}
+
+.login-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 16px;
+}
+
+.login-layout {
+    width: 100%;
+    max-width: 1100px;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    min-height: 520px;
+}
+
+.login-left {
+    background:
+        radial-gradient(circle at 20% 30%, rgba(102, 126, 234, 0.22), transparent 55%),
+        radial-gradient(circle at 80% 70%, rgba(118, 75, 162, 0.18), transparent 60%),
+        #ffffff;
+    display: flex;
+    align-items: center;
+    padding: 48px;
+}
+
+.login-left-content {
+    max-width: 520px;
+}
+
+.login-hero-title {
+    margin: 0 0 10px;
+    font-size: 38px;
+    color: #333;
+}
+
+.login-hero-sub {
+    margin: 0 0 14px;
+    color: #555;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.login-hero-note {
+    color: #666;
+    font-size: 14px;
+}
+
+.login-right {
+    background: linear-gradient(135deg, #667eea 0%, #0d1f6e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+}
+
+.login-panel {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px;
+    padding: 26px;
+}
+
+.login-title {
+    margin: 0 0 8px;
+    font-size: 28px;
+    color: white;
+}
+
+.login-sub {
+    margin: 0 0 18px;
+    color: rgba(255,255,255,0.9);
+    font-size: 14px;
+}
+
+.login-label {
+    color: rgba(255,255,255,0.95);
+}
+
+.login-panel input {
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.login-panel input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.login-actions {
+    margin-top: 14px;
+    display: flex;
+}
+
+.login-error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 900px) {
+    .login-layout {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .login-left {
+        padding: 34px;
+    }
+}
+
 .container {
     max-width: 1400px;
     margin: 0 auto;
@@ -18,15 +143,47 @@ body {
 
 /* Header */
 .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #b45309 0%, #c2410c 55%, #9f1239 100%);
     color: white;
     padding: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
 }
 
 .header h1 {
     font-size: 28px;
-    margin-bottom: 10px;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    color: rgba(255,255,255,0.95);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.header-role {
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.header-session {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.95;
 }
 
 /* Navigation Tabs */
@@ -757,4 +914,309 @@ input:focus, textarea:focus, select:focus {
     color: #666;
     font-size: 14px;
     margin: 0 10px;
+}
+
+/* Day comparison (Statistics) */
+.compare-legend {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    color: #333;
+    font-size: 14px;
+}
+
+.compare-legend-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.compare-legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.compare-swatch-a {
+    background: #667eea;
+}
+
+.compare-swatch-b {
+    background: #fff3cd;
+    border: 1px solid #856404;
+}
+
+.compare-chart {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 14px;
+}
+
+.compare-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 180px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.compare-row:last-child {
+    border-bottom: none;
+}
+
+.compare-row-label {
+    color: #333;
+    font-weight: 600;
+}
+
+.compare-row-bars {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: center;
+}
+
+.compare-track {
+    height: 12px;
+    background: #f0f0f0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.compare-bar {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.2s ease;
+}
+
+.compare-bar-a {
+    background: #667eea;
+}
+
+.compare-bar-b {
+    background: #fff3cd;
+    border: 1px solid #856404;
+    box-sizing: border-box;
+}
+
+.compare-row-values {
+    color: #333;
+    font-weight: 600;
+    text-align: right;
+}
+
+.compare-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.compare-section-header h3 {
+    margin: 0;
+    flex: 1;
+    min-width: 320px;
+}
+
+.compare-section-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .compare-section-header {
+        flex-wrap: wrap;
+    }
+
+    .compare-section-header h3 {
+        min-width: 0;
+    }
+
+    .compare-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .compare-row-values {
+        text-align: left;
+    }
+}
+
+@media print {
+    body {
+        background: white;
+    }
+
+    /* Print colors (bars & swatches) */
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Print mode: Day comparison */
+    body.print-day-compare * {
+        visibility: hidden;
+    }
+
+    body.print-day-compare #dayComparePrintArea,
+    body.print-day-compare #dayComparePrintArea * {
+        visibility: visible;
+    }
+
+    body.print-day-compare #dayComparePrintArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 12px;
+    }
+
+    body.print-day-compare #dayComparePrintArea .search-bar,
+    body.print-day-compare #compareClearBtn,
+    body.print-day-compare #comparePrintBtn,
+    body.print-day-compare #dayCompareMessage {
+        display: none !important;
+    }
+
+    body.print-day-compare #dayComparePrintArea .table-container {
+        max-height: none !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+    }
+
+    body.print-day-compare #dayComparePrintArea .compare-chart {
+        box-shadow: none !important;
+        border: 1px solid #e0e0e0;
+    }
+
+    body.print-day-compare #dayComparePrintArea .compare-chart {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    body.print-day-compare #dayComparePrintArea .compare-details {
+        display: block !important;
+    }
+
+    body.print-day-compare #dayComparePrintArea .compare-panel {
+        width: 100% !important;
+        break-inside: auto;
+        page-break-inside: auto;
+        margin-top: 12px;
+    }
+
+    body.print-day-compare #dayComparePrintArea h4 {
+        margin-top: 10px !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* Print mode: Week comparison */
+    body.print-week-compare * {
+        visibility: hidden;
+    }
+
+    body.print-week-compare #weekComparePrintArea,
+    body.print-week-compare #weekComparePrintArea * {
+        visibility: visible;
+    }
+
+    body.print-week-compare #weekComparePrintArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 12px;
+    }
+
+    body.print-week-compare #weekComparePrintArea .search-bar,
+    body.print-week-compare #weekCompareClearBtn,
+    body.print-week-compare #weekComparePrintBtn,
+    body.print-week-compare #weekCompareMessage {
+        display: none !important;
+    }
+
+    body.print-week-compare #weekComparePrintArea .table-container {
+        max-height: none !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+    }
+
+    body.print-week-compare #weekComparePrintArea .compare-chart {
+        box-shadow: none !important;
+        border: 1px solid #e0e0e0;
+    }
+
+    body.print-week-compare #weekComparePrintArea .compare-chart {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    body.print-week-compare #weekComparePrintArea .compare-details {
+        display: block !important;
+    }
+
+    body.print-week-compare #weekComparePrintArea .compare-panel {
+        width: 100% !important;
+        break-inside: auto;
+        page-break-inside: auto;
+        margin-top: 12px;
+    }
+
+    body.print-week-compare #weekComparePrintArea h4 {
+        margin-top: 10px !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* Print mode: Daily close */
+    body.print-daily-close * {
+        visibility: hidden;
+    }
+
+    body.print-daily-close #daily-close,
+    body.print-daily-close #daily-close * {
+        visibility: visible;
+    }
+
+    body.print-daily-close #daily-close {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+    }
+
+    body.print-daily-close #daily-close .search-bar,
+    body.print-daily-close #dailyClosePrintBtn {
+        display: none !important;
+    }
+
+    body.print-daily-close #dailyProductsPagination {
+        display: none !important;
+    }
+
+    body.print-daily-close th {
+        position: static !important;
+    }
+
+    body.print-daily-close #daily-close .table-container {
+        max-height: none !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+    }
+
+    body.print-daily-close #daily-close .stat-summary-card {
+        box-shadow: none !important;
+    }
+
+    /* Allow table to flow across pages (avoid big blank gaps) */
+    body.print-daily-close #daily-close table {
+        break-inside: auto;
+        page-break-inside: auto;
+    }
 }

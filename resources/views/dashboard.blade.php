@@ -11,13 +11,22 @@
     @php
         $authUser = auth()->user();
         $isAdmin = (int) ($authUser->role ?? 2) === 1;
+        $displayName = (string) ($authUser->name ?? 'Usuario');
+        $roleLabel = $isAdmin ? 'Admin' : 'Vendedor';
     @endphp
     <div class="container">
         <!-- Header -->
         <div class="header">
             <h1>🍺 Inventario y sistema de facturación Micheladas la 66</h1>
-            <div style="margin-top: 10px; display:flex; justify-content: flex-end;">
-                <form method="POST" action="{{ route('logout') }}">
+            <div class="header-actions">
+                <div class="header-user" aria-label="Usuario en sesión">
+                    <span class="header-username">{{ $displayName }}</span>
+                    <span class="header-role">({{ $roleLabel }})</span>
+                    <span id="sessionElapsedRow" class="header-session" style="display: none;">
+                        · Sesión: <span id="sessionElapsed">00:00:00</span>
+                    </span>
+                </div>
+                <form method="POST" action="{{ route('logout') }}" class="header-logout">
                     @csrf
                     <button type="submit" class="btn btn-secondary">Salir</button>
                 </form>
@@ -51,6 +60,7 @@
                         <div id="daily-close" class="section">
                             <div class="section-header">
                                 <h2>🔒 Cierre del Día</h2>
+                                <button id="dailyClosePrintBtn" class="btn btn-success" type="button" onclick="printDailyClose()" style="display: none;">Imprimir</button>
                             </div>
                             <div class="search-bar" style="margin-bottom: 30px;">
                                 <input type="date" id="closeDateFilter" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;" onchange="loadDailyCloseDashboard()">
@@ -334,9 +344,9 @@
                 </div>
 
                 <div style="display: flex; gap: 20px; margin-top: 10px; align-items: flex-start;">
-                    <div style="flex: 1;">
-                        <h3 style="margin-bottom: 15px;">🏆 Top 5 productos más vendidos</h3>
-                        <div class="table-container">
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <h3 style="margin-bottom: 15px;">🏆 Top 4 productos más vendidos</h3>
+                        <div class="table-container" style="max-height: 320px;">
                             <table class="stats-table">
                                 <thead>
                                     <tr>
@@ -354,16 +364,16 @@
                         </div>
                     </div>
 
-                    <div style="flex: 1;">
-                        <h3 style="margin-bottom: 15px;">📅 Top 4 días con más productos vendidos</h3>
-                        <div class="table-container">
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <h3 style="margin-bottom: 15px;">📅 Top 4 días con más ventas</h3>
+                        <div class="table-container" style="max-height: 320px;">
                             <table class="stats-table">
                                 <thead>
                                     <tr>
-                                        <th>Fecha (Año-Mes-Día)</th>
+                                        <th>Día</th>
                                         <th>Productos vendidos</th>
-                                        <th>Top 3 productos</th>
-                                        <th>Total vendido</th>
+                                        <th>Total ventas</th>
+                                        <th>Ganancias</th>
                                     </tr>
                                 </thead>
                                 <tbody id="topDaysTable">
@@ -372,6 +382,256 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="dayComparePrintArea" style="margin-top: 25px;">
+                    <div class="compare-section-header">
+                        <h3>🆚 Comparativo de días (Fecha inicio vs Fecha fin)</h3>
+                        <div class="compare-section-actions">
+                            <button id="compareClearBtn" class="btn btn-secondary" type="button" onclick="resetDayComparison()" style="display: none;">Limpiar</button>
+                            <button id="comparePrintBtn" class="btn btn-success" type="button" onclick="printDayComparison()" style="display: none;">Imprimir</button>
+                        </div>
+                    </div>
+
+                    <div class="search-bar" style="margin-bottom: 12px;">
+                        <input type="date" id="compareStartDate" placeholder="Fecha inicio">
+                        <input type="date" id="compareEndDate" placeholder="Fecha fin">
+                        <button class="btn btn-primary" type="button" onclick="loadDayComparison()">Comparar</button>
+                    </div>
+
+                    <div id="dayCompareMessage" style="margin-top: 5px; color: #666;">Selecciona dos fechas y pulsa “Comparar”.</div>
+
+                    <div id="dayCompareVisual" style="display: none; margin-top: 15px;">
+                        <div class="compare-legend">
+                            <div class="compare-legend-item">
+                                <span class="compare-legend-swatch compare-swatch-a" aria-hidden="true"></span>
+                                <span id="compareLabelA">Fecha inicio</span>
+                            </div>
+                            <div class="compare-legend-item">
+                                <span class="compare-legend-swatch compare-swatch-b" aria-hidden="true"></span>
+                                <span id="compareLabelB">Fecha fin</span>
+                            </div>
+                        </div>
+
+                        <div class="compare-chart" style="margin-top: 12px;">
+                            <div class="compare-row">
+                                <div class="compare-row-label">Transacciones</div>
+                                <div class="compare-row-bars">
+                                    <div class="compare-track"><div id="barTransA" class="compare-bar compare-bar-a" style="width: 0%"></div></div>
+                                    <div class="compare-track"><div id="barTransB" class="compare-bar compare-bar-b" style="width: 0%"></div></div>
+                                </div>
+                                <div class="compare-row-values"><span id="valTransA">0</span> vs <span id="valTransB">0</span></div>
+                            </div>
+
+                            <div class="compare-row">
+                                <div class="compare-row-label">Total ventas</div>
+                                <div class="compare-row-bars">
+                                    <div class="compare-track"><div id="barSalesA" class="compare-bar compare-bar-a" style="width: 0%"></div></div>
+                                    <div class="compare-track"><div id="barSalesB" class="compare-bar compare-bar-b" style="width: 0%"></div></div>
+                                </div>
+                                <div class="compare-row-values"><span id="valSalesA">$0</span> vs <span id="valSalesB">$0</span></div>
+                            </div>
+
+                            <div class="compare-row">
+                                <div class="compare-row-label">Ganancias</div>
+                                <div class="compare-row-bars">
+                                    <div class="compare-track"><div id="barProfitA" class="compare-bar compare-bar-a" style="width: 0%"></div></div>
+                                    <div class="compare-track"><div id="barProfitB" class="compare-bar compare-bar-b" style="width: 0%"></div></div>
+                                </div>
+                                <div class="compare-row-values"><span id="valProfitA">$0</span> vs <span id="valProfitB">$0</span></div>
+                            </div>
+                        </div>
+
+                        <div class="compare-details" style="display: flex; gap: 20px; margin-top: 18px; align-items: flex-start;">
+                            <div class="compare-panel" style="flex: 1;">
+                                <div class="stat-summary-card">
+                                    <div class="summary-header"><h3 id="summaryTitleA">📅 Día A</h3></div>
+                                    <div class="summary-content">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                            <div><strong>Transacciones:</strong> <span id="sumTransA">0</span></div>
+                                            <div><strong>Total ventas:</strong> <span id="sumSalesA">$0</span></div>
+                                            <div><strong>Ganancias:</strong> <span id="sumProfitA">$0</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h4 style="margin-top: 12px; margin-bottom: 8px;">Top 3 productos más vendidos</h4>
+                                <div class="table-container" style="max-height: 260px;">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cantidad</th>
+                                                <th>Total vendido</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="compareTopProductsA">
+                                            <tr><td colspan="3" class="text-center">—</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="compare-panel" style="flex: 1;">
+                                <div class="stat-summary-card">
+                                    <div class="summary-header"><h3 id="summaryTitleB">📅 Día B</h3></div>
+                                    <div class="summary-content">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                            <div><strong>Transacciones:</strong> <span id="sumTransB">0</span></div>
+                                            <div><strong>Total ventas:</strong> <span id="sumSalesB">$0</span></div>
+                                            <div><strong>Ganancias:</strong> <span id="sumProfitB">$0</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h4 style="margin-top: 12px; margin-bottom: 8px;">Top 3 productos más vendidos</h4>
+                                <div class="table-container" style="max-height: 260px;">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cantidad</th>
+                                                <th>Total vendido</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="compareTopProductsB">
+                                            <tr><td colspan="3" class="text-center">—</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="weekComparePrintArea" style="margin-top: 25px;">
+                    <div class="compare-section-header">
+                        <h3>🆚 Comparativo por semana (Rango inicio vs Rango fin)</h3>
+                        <div class="compare-section-actions">
+                            <button id="weekCompareClearBtn" class="btn btn-secondary" type="button" onclick="resetWeekComparison()" style="display: none;">Limpiar</button>
+                            <button id="weekComparePrintBtn" class="btn btn-success" type="button" onclick="printWeekComparison()" style="display: none;">Imprimir</button>
+                        </div>
+                    </div>
+
+                    <div class="search-bar" style="margin-bottom: 12px; flex-wrap: wrap;">
+                        <div style="display:flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <strong style="color:#444;">Rango inicio:</strong>
+                            <input type="date" id="weekStartFrom" placeholder="Desde">
+                            <span style="color:#666;">a</span>
+                            <input type="date" id="weekStartTo" placeholder="Hasta">
+                        </div>
+                        <div style="display:flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <strong style="color:#444;">Rango fin:</strong>
+                            <input type="date" id="weekEndFrom" placeholder="Desde">
+                            <span style="color:#666;">a</span>
+                            <input type="date" id="weekEndTo" placeholder="Hasta">
+                        </div>
+                        <button class="btn btn-primary" type="button" onclick="loadWeekComparison()">Comparar</button>
+                    </div>
+
+                    <div id="weekCompareMessage" style="margin-top: 5px; color: #666;">Selecciona 2 rangos de fechas y pulsa “Comparar”.</div>
+
+                    <div id="weekCompareVisual" style="display: none; margin-top: 15px;">
+                        <div class="compare-legend">
+                            <div class="compare-legend-item">
+                                <span class="compare-legend-swatch compare-swatch-a" aria-hidden="true"></span>
+                                <span id="weekCompareLabelA">Rango inicio</span>
+                            </div>
+                            <div class="compare-legend-item">
+                                <span class="compare-legend-swatch compare-swatch-b" aria-hidden="true"></span>
+                                <span id="weekCompareLabelB">Rango fin</span>
+                            </div>
+                        </div>
+
+                        <div class="compare-chart" style="margin-top: 12px;">
+                            <div class="compare-row">
+                                <div class="compare-row-label">Transacciones</div>
+                                <div class="compare-row-bars">
+                                    <div class="compare-track"><div id="weekBarTransA" class="compare-bar compare-bar-a" style="width: 0%"></div></div>
+                                    <div class="compare-track"><div id="weekBarTransB" class="compare-bar compare-bar-b" style="width: 0%"></div></div>
+                                </div>
+                                <div class="compare-row-values"><span id="weekValTransA">0</span> vs <span id="weekValTransB">0</span></div>
+                            </div>
+
+                            <div class="compare-row">
+                                <div class="compare-row-label">Total ventas</div>
+                                <div class="compare-row-bars">
+                                    <div class="compare-track"><div id="weekBarSalesA" class="compare-bar compare-bar-a" style="width: 0%"></div></div>
+                                    <div class="compare-track"><div id="weekBarSalesB" class="compare-bar compare-bar-b" style="width: 0%"></div></div>
+                                </div>
+                                <div class="compare-row-values"><span id="weekValSalesA">$0</span> vs <span id="weekValSalesB">$0</span></div>
+                            </div>
+
+                            <div class="compare-row">
+                                <div class="compare-row-label">Ganancias</div>
+                                <div class="compare-row-bars">
+                                    <div class="compare-track"><div id="weekBarProfitA" class="compare-bar compare-bar-a" style="width: 0%"></div></div>
+                                    <div class="compare-track"><div id="weekBarProfitB" class="compare-bar compare-bar-b" style="width: 0%"></div></div>
+                                </div>
+                                <div class="compare-row-values"><span id="weekValProfitA">$0</span> vs <span id="weekValProfitB">$0</span></div>
+                            </div>
+                        </div>
+
+                        <div class="compare-details" style="display: flex; gap: 20px; margin-top: 18px; align-items: flex-start;">
+                            <div class="compare-panel" style="flex: 1;">
+                                <div class="stat-summary-card">
+                                    <div class="summary-header"><h3 id="weekSummaryTitleA">📅 Semana A</h3></div>
+                                    <div class="summary-content">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                            <div><strong>Transacciones:</strong> <span id="weekSumTransA">0</span></div>
+                                            <div><strong>Total ventas:</strong> <span id="weekSumSalesA">$0</span></div>
+                                            <div><strong>Ganancias:</strong> <span id="weekSumProfitA">$0</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h4 style="margin-top: 12px; margin-bottom: 8px;">Top 3 productos más vendidos</h4>
+                                <div class="table-container" style="max-height: 260px;">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cantidad</th>
+                                                <th>Total vendido</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="weekCompareTopProductsA">
+                                            <tr><td colspan="3" class="text-center">—</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="compare-panel" style="flex: 1;">
+                                <div class="stat-summary-card">
+                                    <div class="summary-header"><h3 id="weekSummaryTitleB">📅 Semana B</h3></div>
+                                    <div class="summary-content">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                            <div><strong>Transacciones:</strong> <span id="weekSumTransB">0</span></div>
+                                            <div><strong>Total ventas:</strong> <span id="weekSumSalesB">$0</span></div>
+                                            <div><strong>Ganancias:</strong> <span id="weekSumProfitB">$0</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h4 style="margin-top: 12px; margin-bottom: 8px;">Top 3 productos más vendidos</h4>
+                                <div class="table-container" style="max-height: 260px;">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cantidad</th>
+                                                <th>Total vendido</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="weekCompareTopProductsB">
+                                            <tr><td colspan="3" class="text-center">—</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -570,6 +830,38 @@
 
     <script>
         const IS_ADMIN = @json($isAdmin);
+        const LOGIN_AT = @json(session('login_at'));
+
+        function startSessionElapsedTimer() {
+            const row = document.getElementById('sessionElapsedRow');
+            const el = document.getElementById('sessionElapsed');
+            if (!row || !el) return;
+
+            if (!LOGIN_AT) {
+                row.style.display = 'none';
+                return;
+            }
+
+            const start = new Date(LOGIN_AT);
+            if (isNaN(start.getTime())) {
+                row.style.display = 'none';
+                return;
+            }
+
+            row.style.display = 'inline';
+
+            const pad2 = (n) => String(n).padStart(2, '0');
+            const tick = () => {
+                const diffSec = Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000));
+                const hours = Math.floor(diffSec / 3600);
+                const minutes = Math.floor((diffSec % 3600) / 60);
+                const seconds = diffSec % 60;
+                el.textContent = `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
+            };
+
+            tick();
+            setInterval(tick, 1000);
+        }
                 // Daily Close Dashboard Functions
                 let dailyCloseData = [];
                 let dailyCloseCurrentPage = 1;
@@ -588,6 +880,9 @@
                 function loadDailyCloseDashboard() {
                     const selectedDate = document.getElementById('closeDateFilter').value;
                     if (!selectedDate) return;
+
+                    const dailyClosePrintBtn = document.getElementById('dailyClosePrintBtn');
+                    if (dailyClosePrintBtn) dailyClosePrintBtn.style.display = 'none';
 
                     fetch(`/api/sold-products?date=${selectedDate}`)
                         .then(res => res.json())
@@ -610,8 +905,68 @@
                             }
                             dailyCloseCurrentPage = 1;
                             displayDailyClosePage();
+
+                            const dailyClosePrintBtn = document.getElementById('dailyClosePrintBtn');
+                            if (dailyClosePrintBtn) {
+                                dailyClosePrintBtn.style.display = (Array.isArray(dailyCloseData) && dailyCloseData.length > 0) ? 'inline-block' : 'none';
+                            }
                         })
                         .catch(err => showError('Error al cargar cierre del día: ' + err));
+                }
+
+                function withPrintMode(modeClass, fn, cleanupFn = null) {
+                    const clsA = 'print-day-compare';
+                    const clsB = 'print-daily-close';
+
+                    document.body.classList.remove(clsA);
+                    document.body.classList.remove(clsB);
+                    document.body.classList.add(modeClass);
+
+                    const cleanup = () => {
+                        document.body.classList.remove(modeClass);
+                        window.removeEventListener('afterprint', cleanup);
+                        if (typeof cleanupFn === 'function') {
+                            cleanupFn();
+                        }
+                    };
+
+                    window.addEventListener('afterprint', cleanup);
+                    try {
+                        fn();
+                    } finally {
+                        // Fallback cleanup
+                        setTimeout(() => {
+                            document.body.classList.remove(modeClass);
+                            if (typeof cleanupFn === 'function') {
+                                cleanupFn();
+                            }
+                        }, 1500);
+                    }
+                }
+
+                function printDailyClose() {
+                    if (!Array.isArray(dailyCloseData) || dailyCloseData.length === 0) {
+                        showError('Primero carga un cierre del día para poder imprimir.');
+                        return;
+                    }
+
+                    const prevItemsPerPage = dailyCloseItemsPerPage;
+                    const prevPage = dailyCloseCurrentPage;
+
+                    // Render all rows in one continuous table (no pagination)
+                    dailyCloseItemsPerPage = Math.max(dailyCloseData.length, 1);
+                    dailyCloseCurrentPage = 1;
+                    displayDailyClosePage();
+
+                    withPrintMode(
+                        'print-daily-close',
+                        () => window.print(),
+                        () => {
+                            dailyCloseItemsPerPage = prevItemsPerPage;
+                            dailyCloseCurrentPage = prevPage;
+                            displayDailyClosePage();
+                        }
+                    );
                 }
 
                 function displayDailyClosePage() {
@@ -1650,13 +2005,418 @@
             loadTopDays();
         }
 
+        function formatMoney(value) {
+            const n = parseFloat(value || 0);
+            if (isNaN(n)) return '$0.00';
+            return '$' + n.toFixed(2);
+        }
+
+        function setBarWidth(el, value, maxValue) {
+            if (!el) return;
+            const v = Math.max(0, parseFloat(value || 0));
+            const m = Math.max(0, parseFloat(maxValue || 0));
+            const pct = m > 0 ? Math.min(100, (v / m) * 100) : 0;
+            el.style.width = pct.toFixed(2) + '%';
+        }
+
+        function renderCompareTopProducts(tbodyId, products) {
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+
+            if (!products || products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center">Sin ventas</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = products.slice(0, 3).map(p => {
+                const totalSales = parseFloat(p.total_sales || 0);
+                return `
+                    <tr>
+                        <td><strong>${p.product_name || '—'}</strong></td>
+                        <td>${parseInt(p.total_quantity || 0, 10)}</td>
+                        <td><strong>$${totalSales.toFixed(2)}</strong></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function resetDayComparison() {
+            const startEl = document.getElementById('compareStartDate');
+            const endEl = document.getElementById('compareEndDate');
+            const msgEl = document.getElementById('dayCompareMessage');
+            const visualEl = document.getElementById('dayCompareVisual');
+            const clearBtn = document.getElementById('compareClearBtn');
+            const printBtn = document.getElementById('comparePrintBtn');
+
+            if (startEl) startEl.value = '';
+            if (endEl) endEl.value = '';
+
+            if (msgEl) msgEl.textContent = 'Selecciona dos fechas y pulsa “Comparar”.';
+            if (visualEl) visualEl.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (printBtn) printBtn.style.display = 'none';
+
+            // Reset visible values (optional but avoids stale content when re-opening)
+            const idsToResetText = [
+                'compareLabelA', 'compareLabelB',
+                'summaryTitleA', 'summaryTitleB',
+                'valTransA', 'valTransB',
+                'valSalesA', 'valSalesB',
+                'valProfitA', 'valProfitB',
+                'sumTransA', 'sumTransB',
+                'sumSalesA', 'sumSalesB',
+                'sumProfitA', 'sumProfitB'
+            ];
+
+            idsToResetText.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                if (id.includes('Sales') || id.includes('Profit')) {
+                    el.textContent = '$0.00';
+                    return;
+                }
+
+                if (id.startsWith('valTrans') || id.startsWith('sumTrans')) {
+                    el.textContent = '0';
+                    return;
+                }
+            });
+
+            const bars = ['barTransA', 'barTransB', 'barSalesA', 'barSalesB', 'barProfitA', 'barProfitB'];
+            bars.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.width = '0%';
+            });
+
+            const tbodyA = document.getElementById('compareTopProductsA');
+            const tbodyB = document.getElementById('compareTopProductsB');
+            if (tbodyA) tbodyA.innerHTML = '<tr><td colspan="3" class="text-center">—</td></tr>';
+            if (tbodyB) tbodyB.innerHTML = '<tr><td colspan="3" class="text-center">—</td></tr>';
+        }
+
+        function printDayComparison() {
+            const visualEl = document.getElementById('dayCompareVisual');
+            if (!visualEl || visualEl.style.display === 'none') {
+                showError('Primero carga el comparativo para poder imprimir.');
+                return;
+            }
+
+            withPrintMode('print-day-compare', () => window.print());
+        }
+
+        function printWeekComparison() {
+            const visualEl = document.getElementById('weekCompareVisual');
+            if (!visualEl || visualEl.style.display === 'none') {
+                showError('Primero carga el comparativo semanal para poder imprimir.');
+                return;
+            }
+
+            withPrintMode('print-week-compare', () => window.print());
+        }
+
+        function resetWeekComparison() {
+            const startFromEl = document.getElementById('weekStartFrom');
+            const startToEl = document.getElementById('weekStartTo');
+            const endFromEl = document.getElementById('weekEndFrom');
+            const endToEl = document.getElementById('weekEndTo');
+            const msgEl = document.getElementById('weekCompareMessage');
+            const visualEl = document.getElementById('weekCompareVisual');
+            const clearBtn = document.getElementById('weekCompareClearBtn');
+            const printBtn = document.getElementById('weekComparePrintBtn');
+
+            if (startFromEl) startFromEl.value = '';
+            if (startToEl) startToEl.value = '';
+            if (endFromEl) endFromEl.value = '';
+            if (endToEl) endToEl.value = '';
+
+            if (msgEl) msgEl.textContent = 'Selecciona 2 rangos de fechas y pulsa “Comparar”.';
+            if (visualEl) visualEl.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (printBtn) printBtn.style.display = 'none';
+
+            const idsToResetText = [
+                'weekCompareLabelA', 'weekCompareLabelB',
+                'weekSummaryTitleA', 'weekSummaryTitleB',
+                'weekValTransA', 'weekValTransB',
+                'weekValSalesA', 'weekValSalesB',
+                'weekValProfitA', 'weekValProfitB',
+                'weekSumTransA', 'weekSumTransB',
+                'weekSumSalesA', 'weekSumSalesB',
+                'weekSumProfitA', 'weekSumProfitB'
+            ];
+
+            idsToResetText.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                if (id.includes('Sales') || id.includes('Profit')) {
+                    el.textContent = '$0.00';
+                    return;
+                }
+
+                if (id.includes('Trans')) {
+                    el.textContent = '0';
+                }
+            });
+
+            const bars = ['weekBarTransA', 'weekBarTransB', 'weekBarSalesA', 'weekBarSalesB', 'weekBarProfitA', 'weekBarProfitB'];
+            bars.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.width = '0%';
+            });
+
+            const tbodyA = document.getElementById('weekCompareTopProductsA');
+            const tbodyB = document.getElementById('weekCompareTopProductsB');
+            if (tbodyA) tbodyA.innerHTML = '<tr><td colspan="3" class="text-center">—</td></tr>';
+            if (tbodyB) tbodyB.innerHTML = '<tr><td colspan="3" class="text-center">—</td></tr>';
+        }
+
+        function loadWeekComparison() {
+            const startFromEl = document.getElementById('weekStartFrom');
+            const startToEl = document.getElementById('weekStartTo');
+            const endFromEl = document.getElementById('weekEndFrom');
+            const endToEl = document.getElementById('weekEndTo');
+            const msgEl = document.getElementById('weekCompareMessage');
+            const visualEl = document.getElementById('weekCompareVisual');
+            const clearBtn = document.getElementById('weekCompareClearBtn');
+            const printBtn = document.getElementById('weekComparePrintBtn');
+
+            if (!startFromEl || !startToEl || !endFromEl || !endToEl || !msgEl || !visualEl) return;
+
+            const startFrom = startFromEl.value;
+            const startTo = startToEl.value;
+            const endFrom = endFromEl.value;
+            const endTo = endToEl.value;
+
+            if (!startFrom || !startTo || !endFrom || !endTo) {
+                msgEl.textContent = 'Selecciona los 2 rangos completos (desde y hasta).';
+                visualEl.style.display = 'none';
+                if (clearBtn) clearBtn.style.display = 'none';
+                if (printBtn) printBtn.style.display = 'none';
+                return;
+            }
+
+            msgEl.textContent = 'Cargando comparativo semanal...';
+            visualEl.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (printBtn) printBtn.style.display = 'none';
+
+            const qs = new URLSearchParams({
+                startFrom,
+                startTo,
+                endFrom,
+                endTo,
+                topProducts: '3'
+            });
+
+            fetch(`/api/statistics/week-compare?${qs.toString()}`)
+                .then(async r => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) {
+                        throw new Error(data.message || 'No se pudo cargar el comparativo semanal');
+                    }
+                    return data;
+                })
+                .then(data => {
+                    const a = data.start || { from: startFrom, to: startTo, label: `${startFrom} al ${startTo}`, total_transactions: 0, total_sales: 0, total_profit: 0, top_products: [] };
+                    const b = data.end || { from: endFrom, to: endTo, label: `${endFrom} al ${endTo}`, total_transactions: 0, total_sales: 0, total_profit: 0, top_products: [] };
+
+                    // Labels
+                    const labelA = document.getElementById('weekCompareLabelA');
+                    const labelB = document.getElementById('weekCompareLabelB');
+                    if (labelA) labelA.textContent = a.label || `${startFrom} al ${startTo}`;
+                    if (labelB) labelB.textContent = b.label || `${endFrom} al ${endTo}`;
+
+                    const titleA = document.getElementById('weekSummaryTitleA');
+                    const titleB = document.getElementById('weekSummaryTitleB');
+                    if (titleA) titleA.textContent = `📅 Semana: ${(a.label || `${startFrom} al ${startTo}`)}`;
+                    if (titleB) titleB.textContent = `📅 Semana: ${(b.label || `${endFrom} al ${endTo}`)}`;
+
+                    // Values
+                    const transA = parseFloat(a.total_transactions || 0);
+                    const transB = parseFloat(b.total_transactions || 0);
+                    const salesA = parseFloat(a.total_sales || 0);
+                    const salesB = parseFloat(b.total_sales || 0);
+                    const profitA = parseFloat(a.total_profit || 0);
+                    const profitB = parseFloat(b.total_profit || 0);
+
+                    const maxTrans = Math.max(transA, transB);
+                    const maxSales = Math.max(salesA, salesB);
+                    const maxProfit = Math.max(profitA, profitB);
+
+                    setBarWidth(document.getElementById('weekBarTransA'), transA, maxTrans);
+                    setBarWidth(document.getElementById('weekBarTransB'), transB, maxTrans);
+                    setBarWidth(document.getElementById('weekBarSalesA'), salesA, maxSales);
+                    setBarWidth(document.getElementById('weekBarSalesB'), salesB, maxSales);
+                    setBarWidth(document.getElementById('weekBarProfitA'), profitA, maxProfit);
+                    setBarWidth(document.getElementById('weekBarProfitB'), profitB, maxProfit);
+
+                    const valTransA = document.getElementById('weekValTransA');
+                    const valTransB = document.getElementById('weekValTransB');
+                    const valSalesA = document.getElementById('weekValSalesA');
+                    const valSalesB = document.getElementById('weekValSalesB');
+                    const valProfitA = document.getElementById('weekValProfitA');
+                    const valProfitB = document.getElementById('weekValProfitB');
+
+                    if (valTransA) valTransA.textContent = String(Math.round(transA));
+                    if (valTransB) valTransB.textContent = String(Math.round(transB));
+                    if (valSalesA) valSalesA.textContent = formatMoney(salesA);
+                    if (valSalesB) valSalesB.textContent = formatMoney(salesB);
+                    if (valProfitA) valProfitA.textContent = formatMoney(profitA);
+                    if (valProfitB) valProfitB.textContent = formatMoney(profitB);
+
+                    const sumTransA = document.getElementById('weekSumTransA');
+                    const sumTransB = document.getElementById('weekSumTransB');
+                    const sumSalesA = document.getElementById('weekSumSalesA');
+                    const sumSalesB = document.getElementById('weekSumSalesB');
+                    const sumProfitA = document.getElementById('weekSumProfitA');
+                    const sumProfitB = document.getElementById('weekSumProfitB');
+
+                    if (sumTransA) sumTransA.textContent = String(Math.round(transA));
+                    if (sumTransB) sumTransB.textContent = String(Math.round(transB));
+                    if (sumSalesA) sumSalesA.textContent = formatMoney(salesA);
+                    if (sumSalesB) sumSalesB.textContent = formatMoney(salesB);
+                    if (sumProfitA) sumProfitA.textContent = formatMoney(profitA);
+                    if (sumProfitB) sumProfitB.textContent = formatMoney(profitB);
+
+                    renderCompareTopProducts('weekCompareTopProductsA', a.top_products);
+                    renderCompareTopProducts('weekCompareTopProductsB', b.top_products);
+
+                    msgEl.textContent = '';
+                    visualEl.style.display = 'block';
+                    if (clearBtn) clearBtn.style.display = 'inline-block';
+                    if (printBtn) printBtn.style.display = 'inline-block';
+                })
+                .catch(err => {
+                    msgEl.textContent = 'Error al cargar el comparativo semanal.';
+                    visualEl.style.display = 'none';
+                    if (clearBtn) clearBtn.style.display = 'none';
+                    if (printBtn) printBtn.style.display = 'none';
+                    showError('Error al cargar comparativo semanal: ' + err.message);
+                });
+        }
+
+        function loadDayComparison() {
+            const startEl = document.getElementById('compareStartDate');
+            const endEl = document.getElementById('compareEndDate');
+            const msgEl = document.getElementById('dayCompareMessage');
+            const visualEl = document.getElementById('dayCompareVisual');
+            const clearBtn = document.getElementById('compareClearBtn');
+            const printBtn = document.getElementById('comparePrintBtn');
+
+            if (!startEl || !endEl || !msgEl || !visualEl) return;
+
+            const startDate = startEl.value;
+            const endDate = endEl.value;
+
+            if (!startDate || !endDate) {
+                msgEl.textContent = 'Selecciona fecha inicio y fecha fin.';
+                visualEl.style.display = 'none';
+                if (clearBtn) clearBtn.style.display = 'none';
+                if (printBtn) printBtn.style.display = 'none';
+                return;
+            }
+
+            msgEl.textContent = 'Cargando comparativo...';
+            visualEl.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (printBtn) printBtn.style.display = 'none';
+
+            fetch(`/api/statistics/day-compare?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&topProducts=3`)
+                .then(async r => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) {
+                        throw new Error(data.message || 'No se pudo cargar el comparativo');
+                    }
+                    return data;
+                })
+                .then(data => {
+                    const a = data.start || { date: startDate, total_transactions: 0, total_sales: 0, total_profit: 0, top_products: [] };
+                    const b = data.end || { date: endDate, total_transactions: 0, total_sales: 0, total_profit: 0, top_products: [] };
+
+                    // Labels
+                    const labelA = document.getElementById('compareLabelA');
+                    const labelB = document.getElementById('compareLabelB');
+                    if (labelA) labelA.textContent = a.date || startDate;
+                    if (labelB) labelB.textContent = b.date || endDate;
+
+                    const titleA = document.getElementById('summaryTitleA');
+                    const titleB = document.getElementById('summaryTitleB');
+                    if (titleA) titleA.textContent = `📅 Día: ${a.date || startDate}`;
+                    if (titleB) titleB.textContent = `📅 Día: ${b.date || endDate}`;
+
+                    // Values
+                    const transA = parseFloat(a.total_transactions || 0);
+                    const transB = parseFloat(b.total_transactions || 0);
+                    const salesA = parseFloat(a.total_sales || 0);
+                    const salesB = parseFloat(b.total_sales || 0);
+                    const profitA = parseFloat(a.total_profit || 0);
+                    const profitB = parseFloat(b.total_profit || 0);
+
+                    const maxTrans = Math.max(transA, transB);
+                    const maxSales = Math.max(salesA, salesB);
+                    const maxProfit = Math.max(profitA, profitB);
+
+                    setBarWidth(document.getElementById('barTransA'), transA, maxTrans);
+                    setBarWidth(document.getElementById('barTransB'), transB, maxTrans);
+                    setBarWidth(document.getElementById('barSalesA'), salesA, maxSales);
+                    setBarWidth(document.getElementById('barSalesB'), salesB, maxSales);
+                    setBarWidth(document.getElementById('barProfitA'), profitA, maxProfit);
+                    setBarWidth(document.getElementById('barProfitB'), profitB, maxProfit);
+
+                    const valTransA = document.getElementById('valTransA');
+                    const valTransB = document.getElementById('valTransB');
+                    const valSalesA = document.getElementById('valSalesA');
+                    const valSalesB = document.getElementById('valSalesB');
+                    const valProfitA = document.getElementById('valProfitA');
+                    const valProfitB = document.getElementById('valProfitB');
+
+                    if (valTransA) valTransA.textContent = String(Math.round(transA));
+                    if (valTransB) valTransB.textContent = String(Math.round(transB));
+                    if (valSalesA) valSalesA.textContent = formatMoney(salesA);
+                    if (valSalesB) valSalesB.textContent = formatMoney(salesB);
+                    if (valProfitA) valProfitA.textContent = formatMoney(profitA);
+                    if (valProfitB) valProfitB.textContent = formatMoney(profitB);
+
+                    const sumTransA = document.getElementById('sumTransA');
+                    const sumTransB = document.getElementById('sumTransB');
+                    const sumSalesA = document.getElementById('sumSalesA');
+                    const sumSalesB = document.getElementById('sumSalesB');
+                    const sumProfitA = document.getElementById('sumProfitA');
+                    const sumProfitB = document.getElementById('sumProfitB');
+
+                    if (sumTransA) sumTransA.textContent = String(Math.round(transA));
+                    if (sumTransB) sumTransB.textContent = String(Math.round(transB));
+                    if (sumSalesA) sumSalesA.textContent = formatMoney(salesA);
+                    if (sumSalesB) sumSalesB.textContent = formatMoney(salesB);
+                    if (sumProfitA) sumProfitA.textContent = formatMoney(profitA);
+                    if (sumProfitB) sumProfitB.textContent = formatMoney(profitB);
+
+                    renderCompareTopProducts('compareTopProductsA', a.top_products);
+                    renderCompareTopProducts('compareTopProductsB', b.top_products);
+
+                    msgEl.textContent = '';
+                    visualEl.style.display = 'block';
+                    if (clearBtn) clearBtn.style.display = 'inline-block';
+                    if (printBtn) printBtn.style.display = 'inline-block';
+                })
+                .catch(err => {
+                    msgEl.textContent = 'Error al cargar el comparativo.';
+                    visualEl.style.display = 'none';
+                    if (clearBtn) clearBtn.style.display = 'none';
+                    if (printBtn) printBtn.style.display = 'none';
+                    showError('Error al cargar comparativo: ' + err.message);
+                });
+        }
+
         function loadTopProducts() {
             const tbody = document.getElementById('topProductsTable');
             if (!tbody) return;
 
             tbody.innerHTML = '<tr><td colspan="3" class="text-center">Cargando...</td></tr>';
 
-            fetch('/api/statistics/top-products?limit=5')
+            fetch('/api/statistics/top-products?limit=4')
                 .then(r => {
                     if (!r.ok) throw new Error('No se pudo cargar el top de productos');
                     return r.json();
@@ -1689,7 +2449,7 @@
 
             tbody.innerHTML = '<tr><td colspan="4" class="text-center">Cargando...</td></tr>';
 
-            fetch('/api/statistics/top-days?limit=4&topProducts=3')
+            fetch('/api/statistics/top-days?limit=4')
                 .then(r => {
                     if (!r.ok) throw new Error('No se pudo cargar el top de días');
                     return r.json();
@@ -1701,16 +2461,15 @@
                     }
 
                     tbody.innerHTML = rows.map(day => {
-                        const topProducts = (day.top_products || [])
-                            .map(p => `${p.product_name} - ${p.quantity}`)
-                            .join('<br>') || '-';
+                        const totalSales = parseFloat(day.total_sales || 0);
+                        const totalProfit = parseFloat(day.total_profit || 0);
 
                         return `
                             <tr>
                                 <td><strong>${day.date}</strong></td>
                                 <td>${day.total_quantity}</td>
-                                <td>${topProducts}</td>
-                                <td><strong>$${parseFloat(day.total_sales).toFixed(2)}</strong></td>
+                                <td><strong>$${totalSales.toFixed(2)}</strong></td>
+                                <td><strong>$${totalProfit.toFixed(2)}</strong></td>
                             </tr>
                         `;
                     }).join('');
@@ -1986,6 +2745,7 @@
         // ...existing code...
 
         document.addEventListener('DOMContentLoaded', function() {
+            startSessionElapsedTimer();
             loadProducts();
             loadLowStockProducts();
             loadLatestSoldProducts();

@@ -29,6 +29,8 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
+        $request->session()->put('login_at', now()->toIso8601String());
+
         return redirect()->route('dashboard');
     }
 

@@ -10,6 +10,138 @@ use Carbon\Carbon;
 
 class StatisticsController extends Controller
 {
+    private function buildDaySummary(string $date, int $topProductsLimit = 3): array
+    {
+        $topProductsLimit = max(1, min($topProductsLimit, 10));
+
+        $totalsRow = DB::table('sold_products as sp')
+            ->leftJoin('product_costs as pc', 'pc.product_id', '=', 'sp.product_id')
+            ->where(function ($q) use ($date) {
+                $q->whereDate('sp.invoice_date', $date)
+                    ->orWhere(function ($q2) use ($date) {
+                        $q2->whereNull('sp.invoice_date')->whereDate('sp.created_at', $date);
+                    });
+            })
+            ->select([
+                DB::raw('SUM(sp.quantity) as total_transactions'),
+                DB::raw('SUM(sp.price_total) as total_sales'),
+                DB::raw('SUM(sp.price_total) - SUM(sp.quantity * COALESCE(pc.purchase_price, 0)) as total_profit'),
+            ])
+            ->first();
+
+        $topProducts = DB::table('sold_products as sp')
+            ->join('products as p', 'p.id', '=', 'sp.product_id')
+            ->leftJoin('product_costs as pc', 'pc.product_id', '=', 'sp.product_id')
+            ->where(function ($q) use ($date) {
+                $q->whereDate('sp.invoice_date', $date)
+                    ->orWhere(function ($q2) use ($date) {
+                        $q2->whereNull('sp.invoice_date')->whereDate('sp.created_at', $date);
+                    });
+            })
+            ->select([
+                'p.id as product_id',
+                'p.name as product_name',
+                DB::raw('SUM(sp.quantity) as total_quantity'),
+                DB::raw('SUM(sp.price_total) as total_sales'),
+                DB::raw('SUM(sp.price_total) - SUM(sp.quantity * COALESCE(pc.purchase_price, 0)) as total_profit'),
+            ])
+            ->groupBy('p.id', 'p.name')
+            ->orderByDesc('total_quantity')
+            ->orderByDesc('total_sales')
+            ->limit($topProductsLimit)
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'product_id' => (int) $r->product_id,
+                    'product_name' => (string) $r->product_name,
+                    'total_quantity' => (int) ($r->total_quantity ?? 0),
+                    'total_sales' => (float) ($r->total_sales ?? 0),
+                    'total_profit' => (float) ($r->total_profit ?? 0),
+                ];
+            })
+            ->values();
+
+        return [
+            'date' => $date,
+            'total_transactions' => (int) ($totalsRow->total_transactions ?? 0),
+            'total_sales' => (float) ($totalsRow->total_sales ?? 0),
+            'total_profit' => (float) ($totalsRow->total_profit ?? 0),
+            'top_products' => $topProducts,
+        ];
+    }
+
+    private function buildRangeSummary(string $fromDate, string $toDate, int $topProductsLimit = 3): array
+    {
+        $topProductsLimit = max(1, min($topProductsLimit, 10));
+
+        $totalsRow = DB::table('sold_products as sp')
+            ->leftJoin('product_costs as pc', 'pc.product_id', '=', 'sp.product_id')
+            ->where(function ($q) use ($fromDate, $toDate) {
+                $q->where(function ($q1) use ($fromDate, $toDate) {
+                    $q1->whereDate('sp.invoice_date', '>=', $fromDate)
+                        ->whereDate('sp.invoice_date', '<=', $toDate);
+                })
+                    ->orWhere(function ($q2) use ($fromDate, $toDate) {
+                        $q2->whereNull('sp.invoice_date')
+                            ->whereDate('sp.created_at', '>=', $fromDate)
+                            ->whereDate('sp.created_at', '<=', $toDate);
+                    });
+            })
+            ->select([
+                DB::raw('SUM(sp.quantity) as total_transactions'),
+                DB::raw('SUM(sp.price_total) as total_sales'),
+                DB::raw('SUM(sp.price_total) - SUM(sp.quantity * COALESCE(pc.purchase_price, 0)) as total_profit'),
+            ])
+            ->first();
+
+        $topProducts = DB::table('sold_products as sp')
+            ->join('products as p', 'p.id', '=', 'sp.product_id')
+            ->leftJoin('product_costs as pc', 'pc.product_id', '=', 'sp.product_id')
+            ->where(function ($q) use ($fromDate, $toDate) {
+                $q->where(function ($q1) use ($fromDate, $toDate) {
+                    $q1->whereDate('sp.invoice_date', '>=', $fromDate)
+                        ->whereDate('sp.invoice_date', '<=', $toDate);
+                })
+                    ->orWhere(function ($q2) use ($fromDate, $toDate) {
+                        $q2->whereNull('sp.invoice_date')
+                            ->whereDate('sp.created_at', '>=', $fromDate)
+                            ->whereDate('sp.created_at', '<=', $toDate);
+                    });
+            })
+            ->select([
+                'p.id as product_id',
+                'p.name as product_name',
+                DB::raw('SUM(sp.quantity) as total_quantity'),
+                DB::raw('SUM(sp.price_total) as total_sales'),
+                DB::raw('SUM(sp.price_total) - SUM(sp.quantity * COALESCE(pc.purchase_price, 0)) as total_profit'),
+            ])
+            ->groupBy('p.id', 'p.name')
+            ->orderByDesc('total_quantity')
+            ->orderByDesc('total_sales')
+            ->limit($topProductsLimit)
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'product_id' => (int) $r->product_id,
+                    'product_name' => (string) $r->product_name,
+                    'total_quantity' => (int) ($r->total_quantity ?? 0),
+                    'total_sales' => (float) ($r->total_sales ?? 0),
+                    'total_profit' => (float) ($r->total_profit ?? 0),
+                ];
+            })
+            ->values();
+
+        return [
+            'from' => $fromDate,
+            'to' => $toDate,
+            'label' => $fromDate . ' al ' . $toDate,
+            'total_transactions' => (int) ($totalsRow->total_transactions ?? 0),
+            'total_sales' => (float) ($totalsRow->total_sales ?? 0),
+            'total_profit' => (float) ($totalsRow->total_profit ?? 0),
+            'top_products' => $topProducts,
+        ];
+    }
+
     public function topProducts(Request $request): JsonResponse
     {
         $limit = (int) $request->query('limit', 5);
@@ -52,10 +184,12 @@ class StatisticsController extends Controller
         // We use invoices.created_at to represent the real "fecha de creación" of the invoice.
         $days = DB::table('sold_products as sp')
             ->join('invoices as i', 'i.id', '=', 'sp.invoice_id')
+            ->leftJoin('product_costs as pc', 'pc.product_id', '=', 'sp.product_id')
             ->select([
                 DB::raw('DATE(i.created_at) as day'),
                 DB::raw('SUM(sp.quantity) as total_quantity'),
                 DB::raw('SUM(sp.price_total) as total_sales'),
+                DB::raw('SUM(sp.price_total) - SUM(sp.quantity * COALESCE(pc.purchase_price, 0)) as total_profit'),
             ])
             ->groupBy(DB::raw('DATE(i.created_at)'))
             ->orderByDesc('total_quantity')
@@ -93,11 +227,89 @@ class StatisticsController extends Controller
                 'date' => (string) $d->day, // YYYY-MM-DD
                 'total_quantity' => (int) $d->total_quantity,
                 'total_sales' => (float) $d->total_sales,
+                'total_profit' => (float) ($d->total_profit ?? 0),
                 'top_products' => $topProducts,
             ];
         })->values();
 
         return response()->json($result);
+    }
+
+    public function dayCompare(Request $request): JsonResponse
+    {
+        $startDate = (string) $request->query('startDate', '');
+        $endDate = (string) $request->query('endDate', '');
+
+        if (!$startDate || !$endDate) {
+            return response()->json(['message' => 'Se requieren startDate y endDate (YYYY-MM-DD)'], 422);
+        }
+
+        // Validación simple de formato YYYY-MM-DD
+        $isStartValid = preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate) === 1;
+        $isEndValid = preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate) === 1;
+
+        if (!$isStartValid || !$isEndValid) {
+            return response()->json(['message' => 'Formato inválido. Usa YYYY-MM-DD.'], 422);
+        }
+
+        $topLimit = (int) $request->query('topProducts', 3);
+        $topLimit = max(1, min($topLimit, 10));
+
+        return response()->json([
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'start' => $this->buildDaySummary($startDate, $topLimit),
+            'end' => $this->buildDaySummary($endDate, $topLimit),
+        ]);
+    }
+
+    public function weekCompare(Request $request): JsonResponse
+    {
+        $startFrom = (string) $request->query('startFrom', '');
+        $startTo = (string) $request->query('startTo', '');
+        $endFrom = (string) $request->query('endFrom', '');
+        $endTo = (string) $request->query('endTo', '');
+
+        if (!$startFrom || !$startTo || !$endFrom || !$endTo) {
+            return response()->json(['message' => 'Se requieren startFrom, startTo, endFrom, endTo (YYYY-MM-DD)'], 422);
+        }
+
+        $isValid = function (string $d): bool {
+            return preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) === 1;
+        };
+
+        if (!$isValid($startFrom) || !$isValid($startTo) || !$isValid($endFrom) || !$isValid($endTo)) {
+            return response()->json(['message' => 'Formato inválido. Usa YYYY-MM-DD.'], 422);
+        }
+
+        try {
+            $sf = Carbon::createFromFormat('Y-m-d', $startFrom)->startOfDay();
+            $st = Carbon::createFromFormat('Y-m-d', $startTo)->startOfDay();
+            $ef = Carbon::createFromFormat('Y-m-d', $endFrom)->startOfDay();
+            $et = Carbon::createFromFormat('Y-m-d', $endTo)->startOfDay();
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Fechas inválidas.'], 422);
+        }
+
+        if ($sf->gt($st)) {
+            return response()->json(['message' => 'En el rango inicio, la fecha inicial no puede ser mayor que la final.'], 422);
+        }
+
+        if ($ef->gt($et)) {
+            return response()->json(['message' => 'En el rango fin, la fecha inicial no puede ser mayor que la final.'], 422);
+        }
+
+        $topLimit = (int) $request->query('topProducts', 3);
+        $topLimit = max(1, min($topLimit, 10));
+
+        return response()->json([
+            'startFrom' => $startFrom,
+            'startTo' => $startTo,
+            'endFrom' => $endFrom,
+            'endTo' => $endTo,
+            'start' => $this->buildRangeSummary($startFrom, $startTo, $topLimit),
+            'end' => $this->buildRangeSummary($endFrom, $endTo, $topLimit),
+        ]);
     }
 
     public function getUnifiedStatistics(): JsonResponse

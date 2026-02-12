@@ -43,6 +43,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/statistics/unified', [StatisticsController::class, 'getUnifiedStatistics'])->middleware('role:1');
     Route::get('/statistics/top-products', [StatisticsController::class, 'topProducts'])->middleware('role:1');
     Route::get('/statistics/top-days', [StatisticsController::class, 'topDays'])->middleware('role:1');
+    Route::get('/statistics/day-compare', [StatisticsController::class, 'dayCompare'])->middleware('role:1');
+    Route::get('/statistics/week-compare', [StatisticsController::class, 'weekCompare'])->middleware('role:1');
 });
 
 Route::middleware(['web', 'auth'])->get('/user', function (Request $request) {
