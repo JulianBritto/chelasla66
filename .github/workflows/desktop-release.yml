@@ -1,0 +1,89 @@
+name: Desktop Release (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-win:
+    runs-on: windows-latest
+    env:
+      DESKTOP_VERSION: 0.1.${{ github.run_number }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, sqlite, pdo_sqlite
+
+      - name: Bundle PHP into installer
+        shell: pwsh
+        run: |
+          $php = (Get-Command php).Source
+          $phpDir = Split-Path $php
+          Write-Host "PHP at: $php"
+          New-Item -ItemType Directory -Force -Path "desktop/resources/php" | Out-Null
+          Copy-Item -Path "$phpDir\*" -Destination "desktop/resources/php" -Recurse -Force
+
+      - name: Install Composer deps (prod)
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build frontend assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install desktop deps
+        working-directory: desktop
+        run: npm ci
+
+      - name: Build installer
+        working-directory: desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Building desktop version: $env:DESKTOP_VERSION"
+          npx electron-builder --win --x64 --config.extraMetadata.version=$env:DESKTOP_VERSION --publish always
+
+      - name: Push notify connected desktop clients
+        shell: pwsh
+        env:
+          PUSH_NOTIFY_URL: ${{ secrets.PUSH_NOTIFY_URL }}
+          PUSH_NOTIFY_TOKEN: ${{ secrets.PUSH_NOTIFY_TOKEN }}
+        run: |
+          if (-not $env:PUSH_NOTIFY_URL) {
+            Write-Host "PUSH_NOTIFY_URL not set. Skipping push notify."
+            exit 0
+          }
+          if (-not $env:PUSH_NOTIFY_TOKEN) {
+            Write-Host "PUSH_NOTIFY_TOKEN not set. Skipping push notify."
+            exit 0
+          }
+
+          $body = @{
+            version = $env:DESKTOP_VERSION
+            releaseUrl = "https://github.com/${{ github.repository }}/releases"
+            sha = "${{ github.sha }}"
+          } | ConvertTo-Json
+
+          Invoke-RestMethod -Method Post -Uri $env:PUSH_NOTIFY_URL \
+            -Headers @{ Authorization = "Bearer $env:PUSH_NOTIFY_TOKEN" } \
+            -ContentType "application/json" -Body $body
