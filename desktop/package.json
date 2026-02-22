@@ -1,0 +1,99 @@
+{
+  "name": "proyecto-chelas-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "ProyectoChelas Desktop wrapper",
+  "author": "JulianBritto",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JulianBritto/chelasla66.git"
+  },
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "dist:win": "electron-builder --win --x64",
+    "dist": "npm run dist:win",
+    "dist:win:portable": "electron-builder --win portable --x64",
+    "dist:win:desktop": "node scripts/build-win-and-copy-to-desktop.js"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.3",
+    "electron-log": "^5.1.4",
+    "electron-updater": "^6.3.9",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^31.6.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.proyectochelas.desktop",
+    "productName": "ProyectoChelas",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../",
+        "to": "laravel",
+        "filter": [
+          "app/**",
+          "bootstrap/**",
+          "config/**",
+          "database/**",
+          "public/**",
+          "resources/views/**",
+          "routes/**",
+          "storage/**",
+          "vendor/**",
+          "artisan",
+          "composer.json",
+          "server.php"
+        ]
+      },
+      {
+        "from": "./resources/php",
+        "to": "php",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ProyectoChelas"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "JulianBritto",
+        "repo": "chelasla66"
+      }
+    ]
+  }
+}

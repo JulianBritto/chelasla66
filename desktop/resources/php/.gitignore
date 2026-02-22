@@ -1,0 +1,11 @@
+# No commitear binarios de PHP
+*.exe
+*.dll
+*.pdb
+*.ini
+
+!php.ini
+
+# Permitir documentación
+!README.md
+!.gitignore
