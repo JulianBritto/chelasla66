@@ -17,7 +17,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🍺 Inventario y sistema de facturación Micheladas la 66</h1>
+            <h1>🍺 Inventario y sistema de facturación Micheladas la 66aaaaaaeee</h1>
             <div class="header-actions">
                 <div class="header-user" aria-label="Usuario en sesión">
                     <span class="header-username">{{ $displayName }}</span>
