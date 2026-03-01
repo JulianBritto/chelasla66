@@ -772,8 +772,19 @@
                     <textarea id="invoiceNotes" name="notes" rows="3"></textarea>
                 </div>
 
-                <div style="background: #f0f0f0; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                <div style="background: #f0f0f0; padding: 15px; border-radius: 4px; margin-bottom: 12px;">
                     <strong>Total: $<span id="invoiceTotal">0.00</span></strong>
+                </div>
+
+                <div style="background: #f9f9f9; padding: 12px 15px; border-radius: 4px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end;">
+                    <div>
+                        <label for="invoiceReceived" style="display:block; font-weight: 600; margin-bottom: 4px;">Recibido</label>
+                        <input type="number" id="invoiceReceived" min="0" step="100" placeholder="Dinero entregado por el cliente" style="width: 100%; padding: 6px 8px; border-radius: 4px; border: 1px solid #ccc;" oninput="updateInvoiceChange()">
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">Cambio</div>
+                        <div style="font-size: 1.1em;">$<span id="invoiceChange">0.00</span></div>
+                    </div>
                 </div>
 
                 <div style="display: flex; gap: 10px;">
@@ -1434,6 +1445,8 @@
         }
 
         // Open Create Invoice Modal
+        let invoiceTotalValue = 0;
+
         function openCreateInvoiceModal() {
             if (products.length === 0) {
                 showError('⚠️ Debe agregar productos primero');
@@ -1442,6 +1455,12 @@
             invoiceItemCount = 0;
             document.getElementById('invoiceForm').reset();
             document.getElementById('invoiceItemsContainer').innerHTML = '';
+            document.getElementById('invoiceTotal').textContent = '0.00';
+            invoiceTotalValue = 0;
+            const receivedInput = document.getElementById('invoiceReceived');
+            const changeSpan = document.getElementById('invoiceChange');
+            if (receivedInput) receivedInput.value = '';
+            if (changeSpan) changeSpan.textContent = '0.00';
             addInvoiceItem();
             document.getElementById('invoiceModal').classList.add('show');
         }
@@ -1660,6 +1679,22 @@
                 total += subtotal;
             });
             document.getElementById('invoiceTotal').textContent = total.toFixed(2);
+            invoiceTotalValue = total;
+
+            if (typeof updateInvoiceChange === 'function') {
+                updateInvoiceChange();
+            }
+        }
+
+        function updateInvoiceChange() {
+            const total = Number.parseFloat(invoiceTotalValue) || 0;
+            const receivedInput = document.getElementById('invoiceReceived');
+            const changeSpan = document.getElementById('invoiceChange');
+            if (!receivedInput || !changeSpan) return;
+
+            const received = Number.parseFloat(receivedInput.value) || 0;
+            const change = Math.max(0, received - total);
+            changeSpan.textContent = change.toFixed(2);
         }
 
         // Remove Invoice Item
@@ -1699,7 +1734,8 @@
 
             const data = {
                 items: items,
-                notes: document.getElementById('invoiceNotes').value
+                notes: document.getElementById('invoiceNotes').value,
+                amount_received: parseFloat(document.getElementById('invoiceReceived')?.value || 0) || null
             };
 
             fetch('/api/invoices', {
@@ -1759,6 +1795,22 @@
                         <div>
                             <strong>Estado:</strong> <span class="badge badge-success">${invoice.status}</span><br>
                             <strong>Notas:</strong> ${invoice.notes || 'Sin notas'}
+                        </div>
+                    </div>
+
+                    <h3>Resumen de Pago</h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 12px 0 20px;">
+                        <div>
+                            <div style="font-weight: 600;">Total</div>
+                            <div>$${parseFloat(invoice.total).toFixed(2)}</div>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600;">Recibido</div>
+                            <div>$${invoice.amount_received !== null ? parseFloat(invoice.amount_received).toFixed(2) : '0.00'}</div>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600;">Cambio</div>
+                            <div>$${invoice.change_amount !== null ? parseFloat(invoice.change_amount).toFixed(2) : '0.00'}</div>
                         </div>
                     </div>
 

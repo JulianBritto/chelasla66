@@ -27,6 +27,7 @@ class InvoiceController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
+            'amount_received' => 'nullable|numeric|min:0',
         ]);
 
         $invoiceNumber = 'INV-' . date('YmdHis');
@@ -37,9 +38,14 @@ class InvoiceController extends Controller
             $total += $item['price'] * $item['quantity'];
         }
 
+        $amountReceived = isset($validated['amount_received']) ? (float) $validated['amount_received'] : null;
+        $changeAmount = $amountReceived !== null ? max(0, $amountReceived - $total) : null;
+
         $invoice = Invoice::create([
             'invoice_number' => $invoiceNumber,
             'total' => $total,
+            'amount_received' => $amountReceived,
+            'change_amount' => $changeAmount,
             'invoice_date' => now(),
             'notes' => $validated['notes'] ?? null,
             'status' => 'completed'
