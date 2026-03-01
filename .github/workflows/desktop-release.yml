@@ -37,6 +37,33 @@ jobs:
           New-Item -ItemType Directory -Force -Path "desktop/resources/php" | Out-Null
           Copy-Item -Path "$phpDir\*" -Destination "desktop/resources/php" -Recurse -Force
 
+          # Normalizar php.ini para que sea portable dentro del instalador.
+          # - Forzamos extension_dir="ext" para que las extensiones se carguen
+          #   desde la carpeta copiada, no desde rutas absolutas del runner.
+          # - Mantiene habilitadas las extensiones configuradas por setup-php
+          #   (mbstring, sqlite, pdo_sqlite, fileinfo, etc.).
+          $iniPath = "desktop/resources/php/php.ini"
+          if (Test-Path $iniPath) {
+            $content = Get-Content $iniPath
+            $updated = $false
+
+            $content = $content | ForEach-Object {
+              if ($_ -match '^\s*extension_dir\s*=') {
+                $updated = $true
+                'extension_dir="ext"'
+              } else {
+                $_
+              }
+            }
+
+            if (-not $updated) {
+              $content += 'extension_dir="ext"'
+            }
+
+            $content | Set-Content $iniPath -Encoding UTF8
+            Write-Host "Patched php.ini to use portable extension_dir=ext"
+          }
+
       - name: Install Composer deps (prod)
         run: composer install --no-dev --optimize-autoloader
 
