@@ -6,15 +6,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ProyectoChelas</title>
     <style>
-      body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; }
-      .muted { opacity: 0.7; }
-      .box { max-width: 520px; }
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #0b1726;
+        color: #f9fafb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      .card {
+        background: #111827;
+        border-radius: 16px;
+        padding: 32px 40px;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        max-width: 640px;
+      }
+
+      .logo-circle {
+        width: 72px;
+        height: 72px;
+        border-radius: 999px;
+        background: radial-gradient(circle at 30% 20%, #fbbf24, #b91c1c);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f9fafb;
+        font-size: 30px;
+        font-weight: 700;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+      }
+
+      .title {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+
+      .subtitle {
+        margin: 0;
+        opacity: 0.8;
+        font-size: 14px;
+      }
+
+      .muted {
+        opacity: 0.6;
+        font-size: 13px;
+        margin-top: 12px;
+      }
+
+      .spinner {
+        margin-top: 16px;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        border: 2px solid rgba(249, 250, 251, 0.18);
+        border-top-color: #fbbf24;
+        animation: spin 0.75s linear infinite;
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
     </style>
   </head>
   <body>
-    <div class="box">
-      <h2>Abriendo ProyectoChelas…</h2>
-      <p class="muted">Iniciando el servidor local y la base de datos.</p>
+    <div class="card">
+      <div class="logo-circle">PC</div>
+      <div>
+        <h2 class="title">Iniciando ProyectoChelas…</h2>
+        <p class="subtitle">Preparando el sistema para que siempre tengas la última versión.</p>
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="muted">Iniciando el servidor local, base de datos y comprobando actualizaciones.</p>
+      </div>
     </div>
   </body>
 </html>

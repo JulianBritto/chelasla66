@@ -61,15 +61,21 @@ async function maybeAlertAndTriggerUpdate({ version, releaseUrl, triggerUpdate }
     ? `Hay una nueva versión del sistema (${version}).\n\n${releaseUrl}`
     : `Hay una nueva versión del sistema (${version}).`;
 
-  await dialog.showMessageBox({
-    type: 'info',
-    buttons: ['Actualizar'],
-    defaultId: 0,
-    title: 'Nueva versión disponible',
-    message,
-    detail: 'Se descargará en segundo plano y cuando esté lista te pedirá reiniciar.'
-  });
+  try {
+    await dialog.showMessageBox({
+      type: 'info',
+      buttons: ['Aceptar'],
+      defaultId: 0,
+      cancelId: 0,
+      title: 'Nueva versión disponible (obligatoria)',
+      message,
+      detail: 'La aplicación se actualizará y se reiniciará automáticamente para continuar usando el sistema.'
+    });
+  } catch (e) {
+    log.warn('Failed to show forced-update dialog', e);
+  }
 
+  // Siempre dispara la comprobación/descarga de actualización, aunque el usuario cierre el diálogo.
   triggerUpdate();
 }
 

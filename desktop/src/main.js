@@ -45,10 +45,12 @@ function configureAutoUpdate() {
     try {
       await dialog.showMessageBox({
         type: 'info',
-        buttons: ['OK'],
+        buttons: ['Aceptar'],
         defaultId: 0,
-        title: 'Actualización disponible',
-        message: 'Hay una nueva versión del sistema. Se descargará en segundo plano y te pedirá reiniciar cuando esté lista.'
+        cancelId: 0,
+        title: 'Actualización obligatoria',
+        message: 'Hay una nueva versión del sistema. La aplicación se actualizará y necesitará reiniciarse para continuar.',
+        detail: 'Se descargará en segundo plano y cuando esté lista se cerrará para aplicar la actualización.'
       });
     } catch (e) {
       log.warn('Failed to show update-available dialog', e);
@@ -56,18 +58,22 @@ function configureAutoUpdate() {
   });
 
   autoUpdater.on('update-downloaded', async () => {
-    const result = await dialog.showMessageBox({
-      type: 'info',
-      buttons: ['Reiniciar ahora', 'Después'],
-      defaultId: 0,
-      cancelId: 1,
-      title: 'Actualización lista',
-      message: 'Hay una actualización lista. ¿Quieres reiniciar para aplicarla?'
-    });
-
-    if (result.response === 0) {
-      autoUpdater.quitAndInstall();
+    try {
+      await dialog.showMessageBox({
+        type: 'info',
+        buttons: ['Reiniciar ahora'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Actualización lista (obligatoria)',
+        message: 'Hay una actualización lista y es obligatorio reiniciar para continuar usando el sistema.',
+        detail: 'La aplicación se cerrará y se volverá a abrir con la última versión.'
+      });
+    } catch (e) {
+      log.warn('Failed to show update-downloaded dialog', e);
     }
+
+    // Aplique siempre la actualización, incluso si el usuario cierra el diálogo.
+    autoUpdater.quitAndInstall();
   });
 }
 
@@ -108,6 +114,9 @@ app.on('before-quit', async () => {
 
 app.whenReady().then(async () => {
   configureAutoUpdate();
+  // Al abrir la aplicación desde cero, verifica si hay actualizaciones
+  // para que el usuario sea notificado incluso sin estar conectado al servidor push.
+  checkForUpdatesIfNeeded('startup');
   createWindow();
 
   log.info('Electron userData path', app.getPath('userData'));
@@ -142,9 +151,8 @@ app.whenReady().then(async () => {
       triggerUpdate: () => checkForUpdatesIfNeeded('push-notify')
     });
 
-    if (!pushClient?.enabled) {
-      checkForUpdatesIfNeeded('startup-fallback');
-    }
+    // Si el servidor de push no está disponible, ya se ejecutó un check al inicio
+    // (startup), así que no es necesario hacer otro aquí.
   } catch (error) {
     log.error('Failed to start app', error);
     await dialog.showMessageBox({
